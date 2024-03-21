@@ -9,7 +9,7 @@
         "forceConsistentCasingInFileNames": true,
         "declaration": true,
         "paths": {
-            "@corset/*": ["./package/*/"]
+            "@corset/*": ["./package/*/src"]
         }
     }
 }
