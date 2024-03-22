@@ -98,6 +98,32 @@ export const recall = <T>(label: any) => {
     }
 };
 
+export const get = <T>(label: any, depth: number = 1) => {
+    let { value: local } = locale.now!;
+    let plain = world.now;
+    for (let i = 0; i < depth && plain; i++) {
+        let fiber = plain.value.get(label);
+        if (fiber) {
+            return local.point(fiber.now)?.value as T;
+        }
+        plain = plain.prev;
+    }
+};
+
+export const set = <T>(label: any, value: T, depth: number = 1) => {
+    if (get(label, depth)) {
+        pull();
+    }
+    to(value);
+    mark(label);
+};
+/**
+ * define a value as a constant within the current scope
+ * mostly useful for the persistent space of a place.
+ */
+export const define = <T>(label: any, value: T) => {
+    return get(label) ?? set(label, value);
+};
 export const drag = <T>() => {
     let { value: local } = locale.now!;
     let { now } = local;

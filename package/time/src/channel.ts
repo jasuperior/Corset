@@ -5,7 +5,7 @@ export class Channel<T = any> implements Detectable<T> {
     #queue: Walkable.Space<Promise<T> | T> = new Fiber();
     #pending?: Promise<void>;
     #current: T = null as T;
-    #listeners = new Set<Detectable.Listener<T>>();
+    readonly listeners = new Set<Detectable.Listener<T>>();
     #closed = false;
     #running = false;
     constructor(
@@ -16,7 +16,7 @@ export class Channel<T = any> implements Detectable<T> {
         return this.#queue.length;
     }
     get size() {
-        return this.#listeners.size;
+        return this.listeners.size;
     }
     get isPending() {
         return this.#queue.length > 0 || !!this.#pending;
@@ -29,14 +29,14 @@ export class Channel<T = any> implements Detectable<T> {
         this.#current = value;
     }
     subscribe = (listener: Detectable.Listener<T>) => {
-        this.#listeners.add(listener);
+        this.listeners.add(listener);
         this.now; //?
         return () => {
-            this.#listeners.delete(listener);
+            this.listeners.delete(listener);
         };
     };
     unsubscribe = (listener: Detectable.Listener<T>) => {
-        this.#listeners.delete(listener);
+        this.listeners.delete(listener);
     };
     publish = (value: T | Promise<T>) => {
         if (!this.#closed) {
@@ -63,7 +63,7 @@ export class Channel<T = any> implements Detectable<T> {
                 }
                 this.#current = value?.value as T;
 
-                for (let listener of this.#listeners) {
+                for (let listener of this.listeners) {
                     console.log(listener?.identity);
                     // listener !== effects.top &&
                     if (listener.identity) {

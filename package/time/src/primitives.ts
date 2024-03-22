@@ -12,43 +12,64 @@ import {
     drag,
     from,
     mark,
+    get,
+    set,
+    define,
 } from "@corset/space";
 import { Channel } from "./channel";
 import { Detectable } from "./time.types";
 
-const detecting = Symbol("detecting");
-const untracked = Symbol("untracked");
+const isDetecting = Symbol("detecting");
+const isBatched = Symbol("batched");
+const Untrack = Symbol("untracked");
+const Identity = Symbol("identity");
 let depth = 0;
 let untrack = (cb: Detectable.Listener<any>) => {
+    let c = false;
     let p = place(() => {
-        to(untracked);
-        mark(untracked);
-        return cb(undefined);
+        define(Identity, p);
+        set(Untrack, c);
+        //if batched
+        let batched = recall<Set<Detectable.Listener<any>>>(isBatched);
+        if (batched) {
+            batched.add(cb);
+            return;
+        }
+        cb(undefined);
+        c = true;
     });
-    cb.identity = p;
-    return cb;
+    return p;
 };
-const when = place((cb: Detectable.Listener<any>) => {
-    goto(top);
-    if (recall(untracked)) {
-        console.log("untracked", depth);
-        return;
-    }
-    depth++;
-    to(detecting);
-    let ptr = mark(detecting);
-    cb(undefined);
-    // to(detecting);
-    let value: Channel | typeof detecting = goto(ptr);
-    pull();
-    value = pull();
-    while (value !== detecting && value !== undefined) {
-        value.subscribe(untrack(cb) as unknown as Detectable.Listener<any>); //we lose identity here by untracking the callback
-        value = pull();
-    }
-    depth--;
-});
 
+//how do we batch?
+// how do we handle conditionals?
+const when = (cb: Detectable.Listener<any>) =>
+    space(() => {
+        if (get<number>(Untrack, 2)) {
+            return;
+        }
+
+        let listener = untrack(cb);
+        goto(top);
+        to(cb);
+        to(new Set());
+        let ptr = mark(isDetecting);
+        listener();
+        goto(ptr);
+        let producers = drag<Set<Channel>>();
+        for (let channel of producers) {
+            channel.subscribe(listener as unknown as Detectable.Listener<any>); //we lose identity here by untracking the callback
+        }
+    });
+const thus = (cb: Detectable.Listener<any>) =>
+    space(() => {
+        set(isBatched, new Set());
+        cb();
+        let batched = drag<Set<Detectable.Listener<any>>>();
+        for (let listener of batched) {
+            listener();
+        }
+    });
 const unit = <T>(value?: T) =>
     space<Detectable.Accessor<T>>(() => {
         let channel = new Channel();
@@ -56,11 +77,19 @@ const unit = <T>(value?: T) =>
             channel.publish(value);
         }
         let accessor = ((newValue?: T) => {
+            
             if (newValue !== undefined) {
                 channel.publish(newValue);
-            } else if (recall(detecting)) {
-                recall(detecting);
-                to(channel);
+            } else if (recall(isDetecting)) {
+                let producers = now<Set<Channel>>();
+                producers.add(channel);
+            }else {
+                if(recall(Identity)) {
+                    let id = recall<Detectable.Listener<any>>(Identity)!;
+                    if(!channel.listeners.has(id)) {
+                        channel.subscribe(id);
+                    }
+                }
             }
             return channel.now;
         }) as Detectable.Accessor<T>;
@@ -96,31 +125,26 @@ const product = <T, U = T>(
         });
         return accessor;
     });
-const rule = <T>(dx: Detectable.Derivation<T>) =>
-    space(() => {
-        let channel = new Channel();
-        when(() => {
-            channel.publish(dx());
-        });
 
-        if (recall(detecting)) to(channel);
-        // return accessor;
-    });
-const t = unit(5);
-const t2 = unit(14);
-const test = () => {
-    return t() + t2();
-};
-const p = product(test, (v: number) => {
-    console.log(recall(detecting));
-    console.log(next())
-    return (t(v - t2()) + t2(v - t())) as number;
-});
+let u = unit(5);
+let u2 = unit(10);
 when(() => {
-    console.log(p(), t());
+    u() < 10 ? 4 : u2(); //?
 });
-// t2(54);
-// t2(78686); //?
-// t2(76); //?
-// t(535);
-p(99);
+u(16);
+u2(99);
+u2(109)
+u(1)
+// let k = place(() => {
+//     let x = get<number>("test"); //?
+//     if (x) {
+//         set("test", x + 1);
+//         console.log(x);
+//         return;
+//     }
+//     set("test", 1);
+// });
+
+// k(); //?
+// k(); //?
+// k(); //?
