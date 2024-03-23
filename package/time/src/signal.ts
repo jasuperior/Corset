@@ -2,12 +2,25 @@ import { Fiber } from "@corset/space";
 import { Channel } from "./channel";
 
 const isPending = Symbol("pending");
+/**
+ * The `Signal` class extends `Promise` and represents a unit of work that is awaited and then never changes.
+ * A `Signal` has a value, an error, and two channels for success and failure.
+ * The `Signal` is initially in a pending state.
+ * When the success channel receives a value, the `Signal`'s value is updated and it is no longer pending.
+ * When the failure channel receives an error, the `Signal`'s error is updated and it is no longer pending.
+ *
+ * @template T The type of the value.
+ */
 export class Signal<T = any> extends Promise<T> {
     #value?: T;
     #error?: Error;
     #success = new Channel<T>();
     #failure = new Channel<Error>();
     #pending = true;
+    /**
+     * Creates a new `Signal`.
+     * @param value The initial value of the `Signal`.
+     */
     constructor(value?: T) {
         super((res, rej) => {});
         this.#value = value;
@@ -20,6 +33,9 @@ export class Signal<T = any> extends Promise<T> {
             this.#pending = false;
         });
     }
+    /**
+     * Returns whether the `Signal` is pending.
+     */
     get pending() {
         return this.#pending;
     }
@@ -85,12 +101,22 @@ export class Signal<T = any> extends Promise<T> {
         }
         return sig;
     }
+    /**
+     * Publishes a new value to the success channel of the Signal.
+     * If the Signal is still pending, it updates the value and sets the Signal as no longer pending.
+     * @param value - The new value to publish.
+     */
     next(value: T) {
         if (this.#pending) {
             this.#success.publish(value);
         }
         // this.#pending ?? this.#success.publish(value);
     }
+    /**
+     * Publishes a new error to the failure channel of the Signal.
+     * If the Signal is still pending, it updates the error and sets the Signal as no longer pending.
+     * @param error - The new error to publish.
+     */
     throw(error: Error) {
         if (this.#pending) this.#failure.publish(error);
     }

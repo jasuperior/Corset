@@ -1,17 +1,18 @@
 {
     "name": "@corset/matter",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "description": "",
-    "main": "dist/index.js",
+    "main": "dist/matter/index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@corset/space": "^1.0.0",
-        "@corset/time": "^1.0.0",
+        "@corset/space": "^0.0.1",
+        "@corset/time": "^0.0.1",
         "htm": "^3.1.1"
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "corset",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -12,8 +12,8 @@
         "package/*"
     ],
     "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "author": "Jamel Cole",
+    "license": "MIT",
     "private": true,
     "devDependencies": {
         "@jest/globals": "^29.7.0",

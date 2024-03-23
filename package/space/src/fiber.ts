@@ -1,11 +1,9 @@
 import { Space, Step, Walkable } from "./space.types";
 
 /**
- * @namespace Walkable
- *
- * @description
  * A class that stores a value and its neighbors.
  *
+ * @namespace Walkable
  * @link {Walkable}
  */
 export class Knot<T> implements Walkable<T> {
@@ -14,10 +12,19 @@ export class Knot<T> implements Walkable<T> {
         public next: Step<T> = null,
         public prev: Step<T> = null
     ) {}
-
+    /**
+     * Creates a copy of the current step with a new value.
+     * @param value - The new value for the copied step.
+     * @returns A new step with the new value and the same next and previous steps as the current step.
+     */
     copy(value: T) {
         return new Knot(value, this.next, this.prev);
     }
+    /**
+     * Appends a step to the current step.
+     * @param value - The step to append.
+     * @returns The appended step.
+     */
     append(value: Step<T>) {
         if (value) {
             this.next = value;
@@ -30,6 +37,11 @@ export class Knot<T> implements Walkable<T> {
         }
         return value;
     }
+    /**
+     * Prepends a step to the current step.
+     * @param value - The step to prepend.
+     * @returns The prepended step.
+     */
     prepend(value: Step<T>) {
         this.prev = value;
         if (value) {
@@ -48,7 +60,7 @@ export class Knot<T> implements Walkable<T> {
  * @namespace Space
  *
  * @description
- * A class that stores a collection of walkable values.
+ * Represents a collection of walkable values.
  *
  * @link {Space}
  */
