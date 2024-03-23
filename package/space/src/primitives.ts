@@ -161,9 +161,18 @@ export const space = <T = any>(cb: Scope<T>) => {
     world.append(new Map());
     scope.lock(locale.now?.value!);
     let result = cb();
-    scope.release();
-    world.unappend();
-    locale.unappend();
+    if (result instanceof Promise) {
+        result.then((value) => {
+            scope.release();
+            world.unappend();
+            locale.unappend();
+            return value;
+        });
+    } else {
+        scope.release();
+        world.unappend();
+        locale.unappend();
+    }
     return result;
 };
 

@@ -1,0 +1,4 @@
+-   implement throwable interface for channels much like signals.
+-   think about how to address rebindings of moments. once their called, their dead. so when the when calls again, it wont rebind i dont think.
+-   how to handle erros in an effect? should there be an implicit signal for the runtime of a signal?
+    -   should the `when` have a internal channel for when itself gets updated?

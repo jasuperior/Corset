@@ -11,6 +11,7 @@
     "license": "ISC",
     "dependencies": {
         "@corset/space": "^1.0.0",
-        "@corset/time": "^1.0.0"
+        "@corset/time": "^1.0.0",
+        "htm": "^3.1.1"
     }
 }

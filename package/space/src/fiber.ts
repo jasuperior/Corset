@@ -215,6 +215,22 @@ export class Fiber<T = any> implements Space<T> {
         return (this.now = node);
     }
 
+    [Symbol.iterator]() {
+        let node = this.head;
+        return {
+            next: () => {
+                if (!node || node === this.tail?.next) {
+                    return { done: true, value: node?.value || null };
+                }
+                let value = node.value;
+                node = node.next;
+                return { done: false, value };
+            },
+        };
+    }
+    [Symbol.toStringTag]() {
+        return "Fiber";
+    }
     static from<T>(
         now: Walkable.Step<T>,
         head: Walkable.Step<T>,

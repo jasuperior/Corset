@@ -1,5 +1,6 @@
 import { Fiber, Walkable } from "@corset/space";
 import { Detectable, TYPE } from "./time.types";
+import { Signal } from "./signal";
 
 export class Channel<T = any> implements Detectable<T> {
     #queue: Walkable.Space<Promise<T> | T> = new Fiber();
@@ -49,6 +50,21 @@ export class Channel<T = any> implements Detectable<T> {
         }
     };
 
+    then = <U>(listener: Detectable.Transformation<T, U>) => {
+        let signal = new Signal<U>();
+        let promise = new Promise<U>((res, rej) => {
+            let schedule = ((value: T) => {
+                res(listener(value));
+                // this.unsubscribe(schedule);
+            }) as Detectable.Listener<T>;
+            this.subscribe(schedule);
+        });
+
+        return promise;
+    };
+    catch = <U, V>(listener: Detectable.Listener<U>) => {
+        throw new Error("Method not implemented.");
+    };
     #trigger = () => {
         if (this.#queue.length) {
             let value = this.#queue.unprepend();
@@ -64,7 +80,6 @@ export class Channel<T = any> implements Detectable<T> {
                 this.#current = value?.value as T;
 
                 for (let listener of this.listeners) {
-                    console.log(listener?.identity);
                     // listener !== effects.top &&
                     if (listener.identity) {
                         listener.identity.call(this, this.#current);

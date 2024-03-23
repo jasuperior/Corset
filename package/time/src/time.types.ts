@@ -1,9 +1,12 @@
 export const TYPE = Symbol.for("detectable");
 export type Detectable<T = any> = {
     now: T;
+    listeners: Set<Detectable.Listener<T>>;
     subscribe: (listener: Detectable.Listener<T>) => () => void;
     unsubscribe: (listener: Detectable.Listener<T>) => void;
     publish: (value: T | Promise<T>) => void;
+    then: <U>(listener: Detectable.Transformation<T, U>) => Promise<U>;
+    catch: <U, V>(listener: Detectable.Listener<U>) => Promise<V>;
     close: () => void;
     [TYPE]: boolean;
 };

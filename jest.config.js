@@ -13,5 +13,8 @@ module.exports = {
     ],
     moduleNameMapper: {
         '^@corset/(.*)$': '<rootDir>/package/$1/'
+    },
+    transform: {
+        "^.+\\.ts$": "ts-jest",
     }
 };
