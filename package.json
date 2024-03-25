@@ -6,7 +6,7 @@
     "scripts": {
         "test": "jest",
         "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json",
-        "build:all": "rm -rf dist/* && tsc -p tsconfig.pkg.json -ws",
+        "build:all": "npm run build -ws",
         "pub": "npm version patch --force && npm publish"
     },
     "workspaces": [
