@@ -83,7 +83,10 @@ let untrack = (cb: Function) => {
  * @param inheritence - The set of instances that the accessor should consider as its own.
  * @returns The accessor function, with additional properties.
  */
-const createAccessor = <T>(accessor: Function, inheritence: Set<any>) => {
+export const createUnitAccessor = <T>(
+    accessor: Function,
+    inheritence: Set<any>
+) => {
     Object.defineProperty(accessor, Symbol.hasInstance, {
         value: (instance: any) => {
             // console.log(instance())
@@ -99,7 +102,7 @@ const createAccessor = <T>(accessor: Function, inheritence: Set<any>) => {
     Object.defineProperty(accessor, Symbol.for("unit"), {
         value: true,
     });
-    return accessor as Detectable.Accessor<T>;
+    return accessor as Detectable.Unit<T>;
 };
 /**
  * Executes a callback when a certain condition is met.
@@ -236,24 +239,22 @@ export const unless = (cb: Detectable.Listener<any>) => {
  * @param value - The initial value of the unit.
  * @returns The accessor function, which can be used to get or set the value of the unit.
  */
-export const unit = <T>(value?: T) =>
-    space<Detectable.Accessor<T>>(() => {
-        let channel = new Channel(); //add a tag instance to the channels to track inheritenc
-        let inheritence: Set<Detectable.Accessor<any>> = new Set();
+export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
+    space<Detectable.Unit<T>>(() => {
+        let channel = new Channel(eq); //add a tag instance to the channels to track inheritenc
+        let inheritence: Set<Detectable.Unit<any>> = new Set();
         if (value) {
             channel.publish(value);
         }
         let accessor = (newValue?: T) => {
             if (newValue !== undefined) {
-                set("isInitiator", true);
-                console.log("initiating", newValue);
                 channel.publish(newValue);
             } else if (recall(isDetecting)) {
                 let producers = now<Set<Channel>>();
                 producers.add(channel);
                 if (get(isSetting, 2)) {
                     //!NOTE: EXPERIMENTAL!!!
-                    let deps = now<Set<Detectable.Accessor<any>>>();
+                    let deps = now<Set<Detectable.Unit<any>>>();
                     deps.add(accessor);
                 }
             } else {
@@ -280,7 +281,7 @@ export const unit = <T>(value?: T) =>
         //         channel.then(listener);
         //     }) as typeof channel.then,
         // });
-        return createAccessor(accessor, inheritence);
+        return createUnitAccessor(accessor, inheritence);
     });
 Object.defineProperty(unit, Symbol.hasInstance, {
     value: (instance: any) => {
@@ -305,7 +306,7 @@ export const product = <T, U = T>(
 ) =>
     space(() => {
         let u = unit<U>();
-        let inheritence: Set<Detectable.Accessor<any>> = new Set();
+        let inheritence: Set<Detectable.Unit<any>> = new Set();
         let initialized = false;
         let accessor = (newValue?: U) => {
             if (newValue !== undefined) {
@@ -323,7 +324,7 @@ export const product = <T, U = T>(
             u(dx());
             if (!initialized) {
                 initialized = true;
-                inheritence = get<Set<Detectable.Accessor<any>>>(isSetting, 2)!;
+                inheritence = get<Set<Detectable.Unit<any>>>(isSetting, 2)!;
             }
         });
         if (tx)
@@ -335,7 +336,7 @@ export const product = <T, U = T>(
         Object.defineProperty(accessor, Symbol.for("product"), {
             value: true,
         });
-        return createAccessor(accessor, inheritence);
+        return createUnitAccessor(accessor, inheritence);
     });
 Object.defineProperty(product, Symbol.hasInstance, {
     value: (instance: any) => {
@@ -357,7 +358,7 @@ Object.defineProperty(product, Symbol.hasInstance, {
 export const moment = <T>(value?: T) => {
     let signal = new Signal<T>(value);
 
-    let accessor = createAccessor((newValue?: T | Error) => {
+    let accessor = createUnitAccessor((newValue?: T | Error) => {
         if (newValue !== undefined) {
             if (newValue instanceof Error) {
                 signal.throw(newValue);
@@ -391,7 +392,7 @@ export const moment = <T>(value?: T) => {
 export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
     let u = unit<U>();
     let t = unit<T>();
-    let initialized = moment(false);
+    let initialized = unit(false);
     tx = untrack(tx) as Detectable.Transformation<T, U>;
     when(() => {
         if (initialized()) {
@@ -399,7 +400,7 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
             u(tx(value));
         }
     });
-    let accessor = createAccessor((newValue?: T) => {
+    let accessor = createUnitAccessor((newValue?: T) => {
         if (newValue !== undefined) {
             t(newValue);
             if (!initialized()) {

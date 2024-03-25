@@ -1,0 +1,6 @@
+*
+!dist/*
+!dist/time/*
+!dist/time/src/*
+!package.json
+!readme.md

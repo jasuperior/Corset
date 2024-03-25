@@ -1,11 +1,12 @@
 {
     "name": "@corset/time",
-    "version": "0.0.1",
+    "version": "0.0.6",
     "description": "",
-    "main": "dist/time/index.js",
+    "main": "dist/time/src/index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json"
+        "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json",
+        "pub": "npm version patch --force && npm publish"
     },
     "keywords": [],
     "author": "",

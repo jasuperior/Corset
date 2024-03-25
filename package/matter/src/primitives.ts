@@ -1,57 +1,98 @@
-import { unit, when } from "@corset/time";
-import { Draft, commit } from "./draft";
-import { Controllable, Patch } from "./matter.types";
-import htm from "htm";
-const collection = <T extends any[]>(
-    value: T,
-    handler?: Controllable.Handler<T>
+import {
+    Detectable,
+    Signal,
+    createUnitAccessor,
+    event,
+    moment,
+    product,
+    unit,
+    when,
+} from "@corset/time";
+import { Compound, Controllable, Patch } from "./matter.types";
+import { Actor, MapProxy, Puppet } from "./draft";
+import { get, place, set, space } from "@corset/space";
+
+const project = <T extends Controllable.Value<any, any>, U>(
+    prtx: Controllable.Projection<T, U>
 ) => {
-    let draft: Controllable<T>;
-    let changes = unit<Patch[]>([]);
-    let u = unit<T>(value);
-    when(() => {
-        draft = Draft(u());
-    });
+    let entries = get<[Controllable.Key<T>, Controllable.Member<T>][]>(
+        "entries",
+        2
+    );
+    let patches = get<Detectable.Unit<Patch[]>>("patches")!; //?
+    if (!entries) return unit<U>(prtx(new Patch("done", ""))!);
+    for (let [key, value] of entries) {
+        prtx(new Patch("add", key, value));
+    }
+    let value = prtx(new Patch("done", ""));
+    let u = unit<U>();
+    if (value) u(value);
 
     when(() => {
-        if (changes().length) {
-            changes().forEach((patch) => {
-                handler?.[patch.op](patch.path, patch.value);
+        if (patches().length > 0) {
+            patches().forEach((patch) => {
+                let v = prtx(patch);
+                if (v) {
+                    u(v);
+                }
             });
-            changes([]);
         }
     });
-    return (mutx?: Controllable.Mutation<T>) => {
-        if (mutx) {
-            mutx(draft);
-            let [newDraft, patches] = commit(draft);
-            changes(patches);
-            draft = newDraft;
-            return u(); //is there a way to only return patches isntead of the whole draft?
-        }
-        return u();
-    };
+
+    return u; //probably shouldnt cause change and shouldnt be a unit.
 };
 
-const element = (tag: any, props: any, ...children: any[]) => {
-    return { tag, props, children };
+
+const templ = (constant: TemplateStringsArray, ...args: any) => {
+    let u = unit("");
+    when(() => {
+        u(
+            constant.reduce((acc, curr, index) => {
+                if (args[index] instanceof unit) {
+                    return acc + curr + args[index]();
+                }
+                return acc + curr + (args[index] ?? "");
+            }, "")
+        );
+    });
+    return u;
 };
-let c = collection([1, 2, 3], {
-    add: (path, value) => {
-        console.log("add", path, value);
-    },
-    remove: (path, value) => {
-        console.log("remove", path, value);
-    },
-    update: (path, value) => {
-        console.log("update", path, value);
-    },
+
+let system = <T extends Controllable.Value<any, any>>(value: T) =>
+    place(() => {
+        let Constructor = value instanceof Map ? Actor : Puppet;
+        let draft: Controllable<T>;
+        let u = unit(value, (newValue) => value === newValue);
+        let patches = unit<Patch[]>([]);
+
+        set("draft", u);
+        when(() => {
+            //@ts-expect-error: the class constructor is correct as per the condition above.
+            draft = new Constructor(u() as any);
+        });
+        let accessor = createUnitAccessor<Controllable.Mutation<T>>(
+            (mtx?: Controllable.Mutation<T>) => {
+                if (mtx) {
+                    if (mtx(draft.proxy)) {
+                        patches([...draft.commit()]);
+                        // patches([])
+                        return u(draft.original);
+                    }
+                }
+                return u();
+            },
+            new Set()
+        ) as unknown as Controllable.Unit<T>;
+
+        accessor.as = <U>(prtx: Controllable.Projection<T, U>) => {
+            set("entries", draft.entries());
+            set("patches", patches);
+            return project(prtx);
+        };
+        return accessor;
+    });
+let member = <T extends Controllable.Value<any, any>>(value: T) => space(() => {
+
 });
-
-let html = htm.bind(element);
-
-html`
-    <${Symbol()} ${[1,2,3]}>
-        ${c}
-        ${[]}
-    </$>`; //?
+let c = system<any[]>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+let map = new Map();

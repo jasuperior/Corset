@@ -29,6 +29,9 @@ export namespace Detectable {
         return value && value[TYPE] !== undefined;
     };
 
+    export const isUnit = <T>(value: any): value is Detectable.Unit<T> => {
+        return typeof value === "function" && value[Symbol.for("unit")];
+    };
     /**
      * Represents a function that checks equality between two values of type T.
      */
@@ -59,5 +62,5 @@ export namespace Detectable {
     /**
      * Represents a function that accesses a value of type T.
      */
-    export type Accessor<T> = (value?: T | Promise<T>) => T;
+    export type Unit<T> = (value?: T | Promise<T>) => T;
 }

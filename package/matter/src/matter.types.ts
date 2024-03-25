@@ -1,37 +1,58 @@
+import { Detectable } from "@corset/time";
+
 export const DRAFT = Symbol("draft");
 export const ORIGINAL = Symbol("original");
 export const CURRENT = Symbol("current");
 export const PATCHES = Symbol("patches");
 
-export type Controllable<T extends Record<any, any>, U extends T = any> = T & {
-    [DRAFT]: true;
-    [CURRENT]: U;
-    [ORIGINAL]: T;
-    [PATCHES]: Patch[];
-};
+export interface Controllable<
+    T extends Controllable.Value<any, any>,
+    U extends T = any
+> {
+    original: T;
+    draft: U;
+    proxy: U;
+
+    commit(): Patch[];
+    entries(): [Controllable.Key<T>, Controllable.Member<T>][];
+}
 export namespace Controllable {
-    export const isDraft = (value: any): value is Controllable<any> => {
-        return !!(value && value[DRAFT]);
-    };
-    export type Mutation<T extends Record<any, any>> = (
-        draft: Controllable<T>
-    ) => void;
-    export type Handler<T> = {
-        [Key in PatchOp]: (path: Path, value?: T) => void;
+    export type Value<T, U> = T extends string | symbol | number
+        ? Map<T, U> | Record<T, U>
+        : Map<T, U>;
+    export type Mutation<T extends Value<any, any>> = (
+        draft: T & Value<any, any>
+    ) => boolean | void;
+    export type Projection<T extends Value<any, any>, U = any> = (
+        draft: Patch<any, Member<T>>
+    ) => U | void;
+
+    export type Member<T extends Value<any, any>> = T extends Array<infer U>
+        ? U
+        : T extends Value<any, infer U>
+        ? U
+        : never;
+    export type Key<T extends Value<any, any>> = T extends Array<infer U>
+        ? number
+        : T extends Value<infer U, any>
+        ? U
+        : never;
+    export type Unit<T extends Value<any, any>> = ((mutx: Mutation<T>) => T) & {
+        as: <U>(prtx: Projection<T, U>) => Detectable.Unit<U>;
     };
 }
-export type PatchOp = "add" | "remove" | "update";
-export type Path = string | number;
-export interface Patch<T extends PatchOp> {
-    op: T;
+export type PatchOp = "add" | "remove" | "update" | "done";
+export type Path = any;
+export interface Patch<T extends PatchOp, Value = any> {
+    type: T;
     path: Path;
-    value?: any;
-    last?: any;
+    value?: Value;
+    last?: Value;
 }
 
 export class Patch<T extends PatchOp = PatchOp> {
     constructor(op: T, path: Path, value?: any, last?: any) {
-        this.op = op;
+        this.type = op;
         this.path = path;
         this.value = value;
         this.last = last;
@@ -49,17 +70,7 @@ export class Patch<T extends PatchOp = PatchOp> {
         return value instanceof Patch;
     }
 }
-export class Is extends Boolean {
-    constructor(public label: string, public value: boolean) {
-        super(value);
-    }
-    [Symbol.toPrimitive]() {
-        return this.value;
-    }
-    static deleted = new Is("deleted", false);
-    static Draft = new Is("draft", false);
-    static Original = new Is("original", false);
-}
+
 export function assertCantSetReferences(
     prop: Path | symbol
 ): asserts prop is Path {
@@ -72,3 +83,5 @@ export function deleteSlice(target: Map<any, any>, start: number, end: number) {
         target.delete(i.toString());
     }
 }
+
+export type Compound<T extends Record<any, any>> = Detectable.Unit<T>;

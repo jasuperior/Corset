@@ -15,7 +15,7 @@
     "keywords": [],
     "author": "Jamel Cole",
     "license": "MIT",
-    "private": true,
+    "private": false,
     "devDependencies": {
         "@jest/globals": "^29.7.0",
         "@types/node": "^20.11.30",
