@@ -1,18 +1,9 @@
-import {
-    Detectable,
-    Signal,
-    createUnitAccessor,
-    event,
-    moment,
-    product,
-    unit,
-    when,
-} from "@corset/time";
-import { Compound, Controllable, Patch } from "./matter.types";
-import { Actor, MapProxy, Puppet } from "./draft";
+import { Controllable, Patch } from "./matter.types";
+import { Actor, Puppet } from "./draft";
+import { Detectable, createUnitAccessor, unit, when } from "@corset/time";
 import { get, place, set, space } from "@corset/space";
 
-const project = <T extends Controllable.Value<any, any>, U>(
+export const project = <T extends Controllable.Value<any, any>, U>(
     prtx: Controllable.Projection<T, U>
 ) => {
     let entries = get<[Controllable.Key<T>, Controllable.Member<T>][]>(
@@ -42,8 +33,7 @@ const project = <T extends Controllable.Value<any, any>, U>(
     return u; //probably shouldnt cause change and shouldnt be a unit.
 };
 
-
-const templ = (constant: TemplateStringsArray, ...args: any) => {
+export const templ = (constant: TemplateStringsArray, ...args: any) => {
     let u = unit("");
     when(() => {
         u(
@@ -58,7 +48,7 @@ const templ = (constant: TemplateStringsArray, ...args: any) => {
     return u;
 };
 
-let system = <T extends Controllable.Value<any, any>>(value: T) =>
+export const system = <T extends Controllable.Value<any, any>>(value: T) =>
     place(() => {
         let Constructor = value instanceof Map ? Actor : Puppet;
         let draft: Controllable<T>;
@@ -91,8 +81,7 @@ let system = <T extends Controllable.Value<any, any>>(value: T) =>
         };
         return accessor;
     });
-let member = <T extends Controllable.Value<any, any>>(value: T) => space(() => {
-
-});
+let member = <T extends Controllable.Value<any, any>>(value: T) =>
+    space(() => {});
 let c = system<any[]>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 let map = new Map();
