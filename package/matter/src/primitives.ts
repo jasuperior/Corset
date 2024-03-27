@@ -48,8 +48,7 @@ export const templ = (constant: TemplateStringsArray, ...args: any) => {
     return u;
 };
 
-export const system = <T extends Controllable.Value<any, any>>(value: T) =>
-    place(() => {
+export const system = place(<T extends Controllable.Value<any, any>>(value: T) => {
         let Constructor = value instanceof Map ? Actor : Puppet;
         let draft: Controllable<T>;
         let u = unit(value, (newValue) => value === newValue);
@@ -79,9 +78,10 @@ export const system = <T extends Controllable.Value<any, any>>(value: T) =>
             set("patches", patches);
             return project(prtx);
         };
-        return accessor;
+        return accessor as Controllable.Unit<T>;
     });
 let member = <T extends Controllable.Value<any, any>>(value: T) =>
     space(() => {});
-let c = system<any[]>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+let c = system([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 let map = new Map();
+c(); //?

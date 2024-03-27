@@ -18,9 +18,10 @@ export class Puppet<
     proxy: U;
     patches = new Map<keyof T, Patch>();
     #isDrafting = false;
-    readonly isArray =
-        Array.isArray(this.original) || this.original instanceof Array;
+    readonly isArray;
     constructor(public original: T, public accessor: Accessor = Reflect) {
+        this.isArray =
+            Array.isArray(this.original) || this.original instanceof Array;
         this.draft = Object.create(original);
         this.proxy = new Proxy(this.original, {
             get: (target, prop, receiver) => {
@@ -121,8 +122,6 @@ export class Actor<
     proxy: U;
     patches = new Map<keyof T, Patch>();
     #isDrafting = false;
-    readonly isArray =
-        Array.isArray(this.original) || this.original instanceof Array;
     constructor(public original: T, public accessor: Accessor = Reflect) {
         this.draft = new Map() as U;
         this.proxy = new MapProxy(this.original, this.patches) as unknown as U;

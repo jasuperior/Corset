@@ -290,12 +290,12 @@ export const space = <T = any>(cb: Scope<T>) => {
  */
 export const place = <T extends Scope>(cb: T) => {
     let map = new Map();
-    return (...args: Parameters<T>): T => {
+    return (...args: Parameters<T>): ReturnType<T> => {
         return space(() => {
             world.unappend();
             world.append(map);
             let result = cb(...args);
             return result;
-        }) as T;
+        }) as ReturnType<T>;
     };
 };

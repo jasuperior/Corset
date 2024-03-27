@@ -37,7 +37,9 @@ export namespace Controllable {
         : T extends Value<infer U, any>
         ? U
         : never;
-    export type Unit<T extends Value<any, any>> = ((mutx: Mutation<T>) => T) & {
+    export type Unit<T extends Value<any, any>> = ((
+        mutx?: Mutation<T>
+    ) => T) & {
         as: <U>(prtx: Projection<T, U>) => Detectable.Unit<U>;
     };
 }
