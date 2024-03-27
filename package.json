@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "jest",
-        "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json",
+        "build": "rm -rf dist/* && tsc -b --force",
         "build:all": "npm run build -ws --if-present && npm run build",
         "pub": "npm version patch --force && npm publish"
     },

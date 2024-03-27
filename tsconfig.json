@@ -10,6 +10,9 @@
         },
         {
             "path": "./package/time/tsconfig.pkg.json"
+        },
+        {
+            "path": "./package/matter/tsconfig.pkg.json"
         }
     ]
 }
