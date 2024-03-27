@@ -3,5 +3,13 @@
     "compilerOptions": {
         "baseUrl": "./"
     },
-    "include": ["./package/*/src/**.ts"]
+    "include": ["./package/*/src/**.ts"],
+    "references": [
+        {
+            "path": "./package/space/tsconfig.pkg.json"
+        },
+        {
+            "path": "./package/time/tsconfig.pkg.json"
+        }
+    ]
 }
