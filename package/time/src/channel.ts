@@ -11,7 +11,7 @@ export class Channel<T = any> implements Detectable<T> {
     #running = false;
     constructor(
         public eq: Detectable.Equality<T> = (next: T, prev: T) =>
-            next !== undefined && next !== prev && prev !== undefined
+            next !== undefined && next !== prev
     ) {}
     get length() {
         return this.#queue.length;

@@ -243,8 +243,8 @@ export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
     space<Detectable.Unit<T>>(() => {
         let channel = new Channel(eq); //add a tag instance to the channels to track inheritenc
         let inheritence: Set<Detectable.Unit<any>> = new Set();
-        if (value) {
-            channel.publish(value);
+        if (!Object.is(value, undefined)) {
+            channel.publish(value as T);
         }
         let accessor = (newValue?: T) => {
             if (newValue !== undefined) {
@@ -406,6 +406,7 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
             if (!initialized()) {
                 initialized(true);
             }
+            return u();
         } else {
             return u();
         }

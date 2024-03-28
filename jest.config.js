@@ -15,6 +15,6 @@ module.exports = {
         '^@corset/(.*)$': '<rootDir>/package/$1/'
     },
     transform: {
-        "^.+\\.ts$": "ts-jest",
+        "^.+\\.test\\.ts$": "ts-jest",
     }
 };
