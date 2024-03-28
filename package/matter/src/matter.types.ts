@@ -24,7 +24,7 @@ export namespace Controllable {
         draft: T & Value<any, any>
     ) => boolean | void;
     export type Projection<T extends Value<any, any>, U = any> = (
-        draft: Patch<any, Member<T>>
+        patch: Patch<any, Member<T>>
     ) => U | void;
 
     export type Member<T extends Value<any, any>> = T extends Array<infer U>
@@ -41,6 +41,12 @@ export namespace Controllable {
         mutx?: Mutation<T>
     ) => T) & {
         as: <U>(prtx: Projection<T, U>) => Detectable.Unit<U>;
+    };
+
+    export const isUnit = <T extends Value<any, any>>(
+        value: any
+    ): value is Unit<T> => {
+        return typeof value === "function" && "as" in value;
     };
 }
 export type PatchOp = "add" | "remove" | "update" | "done";
@@ -67,6 +73,9 @@ export class Patch<T extends PatchOp = PatchOp> {
     }
     static update(path: Path, value: any, last?: any) {
         return new Patch("update", path, value, last);
+    }
+    static done() {
+        return new Patch("done", "");
     }
     static isPatch(value: any): value is Patch<any> {
         return value instanceof Patch;

@@ -205,8 +205,8 @@ export const set = <T>(label: any, value: T, depth: number = 1) => {
  * @param value - The value of the constant.
  * @returns The value of the constant.
  */
-export const define = <T>(label: any, value: T) => {
-    return get(label) ?? set(label, value);
+export const define = <T>(label: any, value: T, depth: number = 1) => {
+    return get(label, depth) ?? set(label, value, depth);
 };
 /**
  * Retrieves the current value and moves the pointer to the previous or next value in the local scope.
