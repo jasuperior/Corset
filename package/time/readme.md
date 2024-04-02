@@ -1,6 +1,8 @@
-# @Corset/Time: Mastering Time in Reactive Programming
+# @Corset/Time
 
-Welcome to Corset Time, a powerful library designed to revolutionize the way you handle dynamic values over time in your applications. With Corset Time, you can harness the power of reactive programming to create applications that are more responsive, efficient, and intuitive.
+## Mastering Time in Reactive Programming
+
+Corset Time is a powerful library designed to revolutionize the way you handle dynamic values over time in your applications. With Corset Time, you can harness the power of reactive programming to create applications that are more responsive, efficient, and intuitive.
 
 Corset Time is built on the concept of 'units of time' - observable values that can be accessed and modified over time, whilst being detected by encapsulating effects.
 
@@ -30,13 +32,13 @@ yarn add @corset/time
 
 Corset Time introduces the concept of units of time, derived units, signals, and events, offering unparalleled flexibility in handling dynamic data. Let's explore some of the key features:
 
-## Usage
+## Detectable Units
 
 Corset Time provides a set of powerful primitives that allow you to manage dynamic data over time with ease. Here, we'll delve into each of these primitives, providing detailed explanations and comprehensive examples to help you get started.
 
 ### `Unit`: The Fundamental Observable
 
-**Description**: At the heart of Corset Time is the `unit` - an observable value that can be accessed and modified over time. Units serve as the basic building blocks for managing dynamic data within Corset Time.
+At the heart of Corset Time is the `unit` - an observable value that can be accessed and modified over time. Units serve as the basic building blocks for managing dynamic data within Corset Time.
 
 **Example**:
 
@@ -53,9 +55,13 @@ temperature(30); // Set temperature to 30°C
 console.log(temperature()); // Outputs: 30
 ```
 
-**Reference to Source Code**:
+Units always return their latest value, even when being set.
 
--   The `unit` function is defined in the source code [here](#creating-a-unit-of-time).
+```typescript
+assert(temperature(40) === 40);
+```
+
+This guarentees the freshest state of your application. Under the hood, Corset queues each value passed to the unit, allowing for units to accept asyncronous values, whilst also guarenteeing the set order of the unit.
 
 #### Handling Asynchronous Values
 
@@ -64,24 +70,30 @@ Units of time can handle asynchronous values seamlessly. By passing a Promise to
 ```ts
 import { unit } from "@corset/time";
 
-// Create a unit representing an asynchronous value (e.g., fetching data from an API)
-const userData = unit(async () => {
-    const response = await fetch("https://api.example.com/user");
-    const data = await response.json();
-    return data;
-});
+let users = unit<User[]>([]);
+users(fetch("https://api.com/users"));
+console.log(users()); //Outputs: []
 
-// Access the user data (implicitly waits for the Promise to resolve)
-const user = await userData();
-
-console.log(user); // Outputs: { id: 1, name: "John Doe", email: "john@example.com" }
+console.log(await users); //Outputs: User[]
 ```
 
-When using promises in a unit, await keyword is only necessary when using the unit explicitly. Usually, however, the unit will be used in conjuction with [detectable operators](#detectable-operators).
+> When using promises in a unit, await keyword is only necessary when using the unit explicitly. Usually, however, the unit will be used in conjuction with [detectable operators](#detectable-operators).
+
+In the above example, the users array can be consumed immediately as an empty array, then after the promise resolves, the unit will reset its value to the return value of the promise.
+
+This behavior queues up, so you can consume a set of promises in parallel, and they will resolve to the unit in the order they were received.
+
+```typescript
+users(fetch("https://api.com/users/p/1"));
+users(fetch("https://api.com/users/p/2"));
+
+await users; // Outputs: Users[] from p1
+await users; // Outputs: Users[] from p2
+```
 
 #### Defining a Custom Comparison Function
 
-Units of time allow developers to define a custom comparison function to determine equality between values. This can be useful when dealing with complex data types or scenarios where strict equality doesn't suffice.
+Units allow developers to define a custom comparison function to determine equality between values. This can be useful when dealing with complex data types or scenarios where strict equality doesn't suffice.
 
 ```ts
 import { unit } from "@corset/time";
@@ -107,7 +119,7 @@ console.log(shoppingList()); // Outputs: ["banana", "apple"]
 
 ### `Product` : Derived Units
 
-**Description**: Products are derived units of time that are computed based on one or more other units. They automatically update whenever their dependencies change, allowing you to create complex data representations with ease.
+Products are derived units of time that are computed based on one or more other units. They automatically update whenever their dependencies change, allowing you to create complex data representations with ease.
 
 **Example**:
 
@@ -155,13 +167,12 @@ fahrenheit(68);
 console.log(celsius()); // Outputs: 20°C
 ```
 
-**Reference to Source Code**:
+### `Moment`: A Defered Trigger
 
--   The `product` function is defined in the source code [here](#creating-a-derived-unit).
+Moments are like a loaded gun with a single bullet. It represents a moment in time which happens once and remains constant for the remainder of time.
+Under the hood, they are simply abstractions over `Signal`s. They facilitate precise event management and asynchronous workflows, by providing a controllable promise that can be provided as a value to a unit.
 
-### Signals
-
-**Description**: Signals represent values that change over time and are awaited but never change after initialization. They facilitate precise event management and asynchronous workflows.
+> I'm aware that the name "Signal" is commonly used by other frameworks to represent something more akin to a `unit` in Corset. But its a design decision which was made deliberately.
 
 **Example**:
 
@@ -169,22 +180,28 @@ console.log(celsius()); // Outputs: 20°C
 import { moment } from "@corset/time";
 
 // Create a signal representing the start time of an event
-const eventStart = moment(new Date());
+const party = moment<string>();
 
 // Later in the code...
 // If the event has started, await it
-await eventStart;
+(async () => {
+    let chant = await party // Outputs: "Raise the roof!"
+    //... rest of the business logic
+}());
+
+//... after some time
+party("Raise the roof!")
 
 console.log("Event has started!");
 ```
 
-**Reference to Source Code**:
+In the example, the moment is able to halt the execution of the async function until party is supplied a value. Once the value has been set, the moment is resolved, and will continue to return `"Raise the roof"` until the party is over.
 
--   The `moment` function is defined in the source code [here](#creating-a-moment).
+This becomes more useful when combined with Detectable Operators.
 
-### Events
+### `Events`: A Unit of a Function
 
-**Description**: Events are units that trigger changes only when they are called. They enable developers to handle discrete events and manage interactions within applications.
+Events are units with a user defined setter, the value of the unit being the return value of the supplied setter. This unit is most useful for mapping data from external event sources into a detectable data stream.
 
 **Example**:
 
@@ -192,19 +209,27 @@ console.log("Event has started!");
 import { event } from "@corset/time";
 
 // Define an event representing a button click
-const buttonClicked = event(() => "Button Clicked!");
+const clicks = event<Event>((evt) => evt);
 
-// Triggering the button click event
-console.log(buttonClicked()); // Outputs: "Button Clicked!"
+const div = document.createElement("div");
+div.addEventListener("click", clicks);
+
+div.click();
+
+console.log(clicks()); //Outputs: Event<HTMLDivElement>
 ```
 
-**Reference to Source Code**:
+In the above example, the event simply returns the click event supplied by the div. the resulting unit becomes an atomic unit of the set of all clicks provided by the element over time. This is a trivial example, however, one can imagine using an event to map some data from an event source to a desired shape, and utilize the value returned to the unit within his business logic.
 
--   The `event` function is defined in the source code [here](#creating-an-event).
+## Detectable Operators
 
-### Subscription to Changes
 
-**Description**: The `when` function allows developers to subscribe to changes in units, derived units, or signals. It provides a mechanism for executing callbacks when certain conditions are met.
+Corset Time provides a set of detectable operators that allow you to react to changes in units. These operators - `when`, `whenever`, `thus`, and `unless` - offer a flexible and intuitive way to manage dynamic data, enabling you to create applications that are more responsive and efficient.
+
+
+### `When`: Subscription to Synchronous Changes
+
+The `when` function allows developers to subscribe to changes in units. It triggers the provided callback function each time a member unit's value is updated. If you've worked with frameworks like Preact or Solid, you'll find the when function familiar as it shares the same interface as the effect function in these frameworks. This makes when an intuitive and efficient way to manage dynamic data in your applications.
 
 **Example**:
 
@@ -224,9 +249,43 @@ when(() => {
 stockPrice(110); // Outputs: "Stock price changed to $110"
 ```
 
-**Reference to Source Code**:
+The callback is called immediately upon being defined, and runs synchronously. This, as opposed to the asynchronous behavior that `whenever` is meant to handle. 
 
--   The `when` function is defined in the source code [here](#executing-a-callback-when-a-certain-condition-is-met).
+#### Implicitly Handle conditional statements
+
+`when` will progressively subscribe to it's dependents as it detects their existence. This means, units which are retrieved behind an uninitiated case of a condition, will be subscribed to when their respective condition is met. 
+
+**Example:**
+```typescript
+const user = unit(fetch("/users/1"))
+const username = product(()=> user()?.username);
+const message = user("Hello, ")
+when(() => {
+    if(user()) {
+        console.log(message() + username())
+    }else {
+        console.log("loading...")
+    }
+})
+
+//...business logic
+
+user.then(() => {
+    message("Goodbye, ")
+})
+
+/**
+ * Outputs: 
+ * "loading..."
+ * "Hello, <Username>"
+ * "Goodbye, <Username>"
+ */ 
+```
+In the above example, the message is only logged once the user has been loaded and set on the `user` unit. Once the condition has been met, `when` subscribes to the `message` and `username` unit, making it possible to later change `message` and trigger the console log again provided `user` is still defined.
+
+### `Whenever`: Subscription to Asynchronous Changes 
+
+`whenever` works similarly to 
 
 ---
 

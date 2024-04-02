@@ -139,17 +139,25 @@ export const when = (cb: Detectable.Listener<any>) =>
             }
         }
 
-        set("unsub", () => {
+        let unsubscribe = () => {
             producers.forEach((channel) => {
                 if (channel instanceof Channel) channel.unsubscribe(listener);
             });
             producers.clear();
             // delete producers;
-        });
+        };
+        unsubscribe[Identity] = "Unsubscribe";
+        set("unsub", unsubscribe);
 
         return now<() => void>();
         // recall(isSetting) //?
     });
+
+Object.defineProperty(when, Symbol.hasInstance, {
+    value: (instance: any) => {
+        return instance?.[Identity] === "Unsubscribe";
+    },
+});
 /**
  * Same as when but async. Executes a callback when a certain condition is met.
  * The callback is tracked, meaning it will be executed even if it is batched.
@@ -201,6 +209,38 @@ export const whenever = async (cb: Detectable.Listener<Promise<any>>) =>
         // recall(isSetting) //?
     });
 
+const doIteration = (
+    value: Detectable.Unit<any> | Detectable.Unsubscriber,
+    iterate: Function
+) => {
+    return Detectable.isUnit(value)
+        ? value.then(iterate as Detectable.Transformation<any, any>)
+        : iterate();
+};
+export const how = (cb: Detectable.Process) => {
+    let p = place(cb);
+    let gen = p();
+    let result = gen.next();
+    let unsubs = new Set<() => void>();
+    let iterate = (value?: any) => {
+        result = gen.next(value);
+        let u = result.value;
+        if (Detectable.isUnit(u)) {
+            u.then(iterate);
+        } else if (u instanceof when) {
+            unsubs.add(u);
+            iterate();
+        } else if (result.done) {
+            unsubs.forEach((unsub) => unsub());
+            unsubs.clear();
+            gen = p();
+            result = gen.next();
+            doIteration(result.value!, iterate);
+        }
+    };
+    doIteration(result.value!, iterate);
+    return p;
+};
 /**
  * Executes the all callback, and collects all the channels that are produced by the callback.
  * Each collected listener is then executed in batch.
@@ -246,7 +286,7 @@ export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
         if (!Object.is(value, undefined)) {
             channel.publish(value as T);
         }
-        let accessor = (newValue?: T) => {
+        let accessor = createUnitAccessor<T>((newValue?: T) => {
             if (newValue !== undefined) {
                 channel.publish(newValue);
             } else if (recall(isDetecting)) {
@@ -266,22 +306,15 @@ export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
                 }
             }
             return channel.now;
-        };
-        /**
-         * @experimental
-         */
-        // Object.defineProperty(accessor, "then", {
-        //     value: ((listener) => {
-        //         if (get("isInitiator")) {
-        //             //not working... noop
-        //             set("isInitiator", false);
-        //             return listener(channel.now);
-        //         }
-        //         console.log("is not initiateor");
-        //         channel.then(listener);
-        //     }) as typeof channel.then,
-        // });
-        return createUnitAccessor(accessor, inheritence);
+        }, inheritence);
+
+        Object.defineProperty(accessor, "then", {
+            value: channel.then.bind(channel),
+        });
+        Object.defineProperty(accessor, "catch", {
+            value: channel.catch.bind(channel),
+        });
+        return accessor;
     });
 Object.defineProperty(unit, Symbol.hasInstance, {
     value: (instance: any) => {
@@ -413,3 +446,21 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
     }, new Set());
     return accessor;
 };
+
+let u = unit(0);
+let v = unit(0);
+let test = how(function* () {
+    console.log(yield u);
+    console.log(yield u);
+    yield when(() => {
+        console.log(u());
+    });
+    console.log(yield u);
+});
+test();
+u(1);
+u(2);
+u(32);
+v(3);
+u(99);
+u(19);

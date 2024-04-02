@@ -12,7 +12,7 @@ export type Detectable<T = any> = {
     subscribe: (listener: Detectable.Listener<T>) => () => void;
     unsubscribe: (listener: Detectable.Listener<T>) => void;
     publish: (value: T | Promise<T>) => void;
-    then: <U>(listener: Detectable.Transformation<T, U>) => Promise<U>;
+    then: <U>(listener: Detectable.Transformation<T, U>) => Detectable<T>;
     catch: <U, V>(listener: Detectable.Listener<U>) => Promise<V>;
     close: () => void;
     [TYPE]: boolean;
@@ -44,6 +44,7 @@ export namespace Detectable {
         identity?: Function;
     };
 
+    export type Process = () => Generator<Unit<any> | Unsubscriber, void, any>;
     /**
      * Represents a function that derives a value of type U from a value of type T.
      */
@@ -62,5 +63,8 @@ export namespace Detectable {
     /**
      * Represents a function that accesses a value of type T.
      */
-    export type Unit<T> = (value?: T | Promise<T>) => T;
+    export type Unit<T> = ((value?: T | Promise<T>) => T) & {
+        then: <U>(listener: Transformation<T, U>) => Promise<U>;
+        catch: <U>(listener: Listener<U>) => Promise<U>;
+    };
 }

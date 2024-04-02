@@ -7,6 +7,7 @@ export class Channel<T = any> implements Detectable<T> {
     #pending?: Promise<void>;
     #current: T = null as T;
     readonly listeners = new Set<Detectable.Listener<T>>();
+    #pendingListeners = new Set<Detectable.Listener<T>>();
     #closed = false;
     #running = false;
     constructor(
@@ -30,8 +31,9 @@ export class Channel<T = any> implements Detectable<T> {
         this.#current = value;
     }
     subscribe = (listener: Detectable.Listener<T>) => {
-        this.listeners.add(listener);
-        this.now; //?
+        let listeners = this.#running ? this.#pendingListeners : this.listeners;
+        listeners.add(listener);
+        this.now;
         return () => {
             this.listeners.delete(listener);
         };
@@ -51,21 +53,28 @@ export class Channel<T = any> implements Detectable<T> {
     };
 
     then = <U>(listener: Detectable.Transformation<T, U>) => {
-        let signal = new Signal<U>();
-        let promise = new Promise<U>((res, rej) => {
-            let schedule = ((value: T) => {
-                res(listener(value));
-                // this.unsubscribe(schedule);
-            }) as Detectable.Listener<T>;
-            this.subscribe(schedule);
-        });
-
-        return promise;
+        // let signal = new Signal<U>();
+        // let promise = new Promise<U>((res, rej) => {
+        //     let schedule = ((value: T) => {
+        //         console.log("scheduled", value);
+        //         res(listener(value));
+        //         this.unsubscribe(schedule);
+        //     }) as Detectable.Listener<T>;
+        //     this.subscribe(schedule);
+        // });
+        // return promise;
+        let schedule = ((value: T) => {
+            listener(value);
+            this.unsubscribe(schedule);
+        }) as Detectable.Listener<T>;
+        this.subscribe(schedule);
+        return this as Detectable<T>;
     };
     catch = <U, V>(listener: Detectable.Listener<U>) => {
         throw new Error("Method not implemented.");
     };
     #trigger = () => {
+        this.#running = true;
         if (this.#queue.length) {
             let value = this.#queue.unprepend();
             while (
@@ -90,6 +99,13 @@ export class Channel<T = any> implements Detectable<T> {
             if (value?.value instanceof Promise) {
                 this.#triggerPromise(value.value as Promise<T>);
             }
+        }
+        this.#running = false;
+        if (this.#pendingListeners.size) {
+            this.#pendingListeners.forEach((listener) => {
+                this.listeners.add(listener);
+            });
+            this.#pendingListeners.clear();
         }
     };
     #triggerPromise = (value: Promise<T>) => {
