@@ -13,7 +13,7 @@ export type Detectable<T = any> = {
     unsubscribe: (listener: Detectable.Listener<T>) => void;
     publish: (value: T | Promise<T>) => void;
     then: <U>(listener: Detectable.Transformation<T, U>) => Detectable<T>;
-    catch: <U, V>(listener: Detectable.Listener<U>) => Promise<V>;
+    catch:(listener: Detectable.Listener<Error>) => Detectable<T>;
     close: () => void;
     [TYPE]: boolean;
 };

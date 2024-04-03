@@ -8,6 +8,7 @@ export class Channel<T = any> implements Detectable<T> {
     #current: T = null as T;
     readonly listeners = new Set<Detectable.Listener<T>>();
     #pendingListeners = new Set<Detectable.Listener<T>>();
+
     #closed = false;
     #running = false;
     constructor(
@@ -52,6 +53,9 @@ export class Channel<T = any> implements Detectable<T> {
         }
     };
 
+    throw = (error: Error) => {
+        this.publish(Promise.reject(error));
+    }
     then = <U>(listener: Detectable.Transformation<T, U>) => {
         // let signal = new Signal<U>();
         // let promise = new Promise<U>((res, rej) => {
@@ -68,9 +72,10 @@ export class Channel<T = any> implements Detectable<T> {
             this.unsubscribe(schedule);
         }) as Detectable.Listener<T>;
         this.subscribe(schedule);
-        return this as Detectable<T>;
+        return this;
     };
-    catch = <U, V>(listener: Detectable.Listener<U>) => {
+    catch = (listener: Detectable.Listener<Error>) => {
+        // this.
         throw new Error("Method not implemented.");
     };
     #trigger = () => {

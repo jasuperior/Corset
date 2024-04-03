@@ -168,6 +168,7 @@ Object.defineProperty(when, Symbol.hasInstance, {
  * @returns An unsubscribe function.
  *
  * @link {when}
+ * @deprecated: This doesnt offer much use that `how` can't already accomplish.
  */
 export const whenever = async (cb: Detectable.Listener<Promise<any>>) =>
     //@ts-expect-error
@@ -217,14 +218,27 @@ const doIteration = (
         ? value.then(iterate as Detectable.Transformation<any, any>)
         : iterate();
 };
+
+/**
+ * Executes a generator callback in a loop, and awaits all the units and operations that are yielded by the callback.
+ * The function creates a unsubscription callback from the callback and executes the generator in a loop.
+ *
+ * @param cb - The generator callback function to be executed.
+ * @returns An unsubscribe function.
+ *
+ * @link {when}
+ */
 export const how = (cb: Detectable.Process) => {
-    let p = place(cb);
-    let gen = p();
-    let result = gen.next();
+    let p = place(cb),
+        gen = p(),
+        result = gen.next();
     let unsubs = new Set<() => void>();
+    let stop = false;
     let iterate = (value?: any) => {
+        if (stop) return;
         result = gen.next(value);
         let u = result.value;
+
         if (Detectable.isUnit(u)) {
             u.then(iterate);
         } else if (u instanceof when) {
@@ -239,7 +253,13 @@ export const how = (cb: Detectable.Process) => {
         }
     };
     doIteration(result.value!, iterate);
-    return p;
+    let unsubscribe = () => {
+        stop = true;
+        unsubs.forEach((unsub) => unsub());
+        unsubs.clear();
+    };
+    unsubscribe[Identity] = "Unsubscribe";
+    return unsubscribe;
 };
 /**
  * Executes the all callback, and collects all the channels that are produced by the callback.
@@ -260,6 +280,8 @@ export const thus = (cb: Detectable.Listener<any>) =>
  * The function checks if we are currently detecting, and if we are, it retrieves the set of channels.
  * It then checks each channel in the set, and if a channel is a signal, it catches the callback.
  * @param cb - The callback function to be executed if a signal is caught.
+ *
+ * @experimental
  */
 export const unless = (cb: Detectable.Listener<any>) => {
     if (recall(isDetecting)) {
@@ -322,16 +344,13 @@ Object.defineProperty(unit, Symbol.hasInstance, {
     },
 });
 /**
- * Creates a derived unit that subscribes to its child units and produces their combined result over time.
- * The function creates a unit and an accessor, and sets the unit as the current value of the accessor.
- * It then returns the accessor.
- * The accessor can be used to get or set the value of the unit.
- * When the accessor is called with a new value, it sets the value of the unit.
- * When the accessor is called without a value, it returns the current value of the unit.
+ * Creates a derived unit, which is a unit of one or more other units.
  * The product is derived from the provided derivation and transformation functions.
  * @param dx - The derivation function, which defines how the product is derived from its child units.
  * @param tx - The transformation function, which defines how the product is transformed when a new value is set.
  * @returns The accessor function, which can be used to get or set the value of the product.
+ *
+ * @link {unit}
  */
 export const product = <T, U = T>(
     dx: Detectable.Derivation<T, U>,
@@ -362,7 +381,7 @@ export const product = <T, U = T>(
         });
         if (tx)
             when(() => {
-                //NOTE: check that the resulting value is equel to the current value. if not throw an error.
+                //NOTE: check that the resulting value is equal to the current value. if not throw an error.
                 //products must be consitent in and out
                 tx(u());
             });
@@ -387,6 +406,8 @@ Object.defineProperty(product, Symbol.hasInstance, {
  * The function also defines 'then' and 'catch' methods on the accessor, which are bound to the corresponding methods on the Signal.
  * @param value - The initial value of the moment.
  * @returns The accessor function, which can be used to get or set the value of the moment.
+ *
+ * @deprecated We added promise interface to channels. Signals may not be needed.
  */
 export const moment = <T>(value?: T) => {
     let signal = new Signal<T>(value);
@@ -414,13 +435,10 @@ export const moment = <T>(value?: T) => {
 };
 /**
  * Creates an event, which is a unit that triggers a change only when it is called.
- * The function creates two units and a moment, and a transformation function that is untracked.
- * It then defines a 'when' function that, if the moment is initialized, gets the value of the first unit and sets the value of the second unit to the transformed value.
- * The function also creates an accessor that, when called with a new value, sets the value of the first unit and initializes the moment if it is not already initialized.
- * When the accessor is called without a value, it returns the current value of the second unit.
- * The event does not subscribe to its child units, if any.
  * @param tx - The transformation function, which defines how the event value is transformed when a new value is set.
  * @returns The accessor function, which can be used to get or set the value of the event.
+ *
+ * @link {unit}
  */
 export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
     let u = unit<U>();
@@ -447,20 +465,7 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
     return accessor;
 };
 
-let u = unit(0);
-let v = unit(0);
-let test = how(function* () {
-    console.log(yield u);
-    console.log(yield u);
-    yield when(() => {
-        console.log(u());
-    });
-    console.log(yield u);
+let u = unit(Promise.resolve(1));
+u.then(() => {
+    console.log("hello", u());
 });
-test();
-u(1);
-u(2);
-u(32);
-v(3);
-u(99);
-u(19);

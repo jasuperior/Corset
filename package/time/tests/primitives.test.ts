@@ -6,7 +6,9 @@ import {
     event,
     when,
     whenever,
+    how,
 } from "../src/primitives";
+import exp from "constants";
 
 describe("Detectable Units", () => {
     describe("unit", () => {
@@ -24,10 +26,13 @@ describe("Detectable Units", () => {
         });
         describe("when given a promise", () => {
             test("awaits the promise and sets the value to the resolved value", async () => {
-                let u = unit(Promise.resolve(1));
+                expect.assertions(2);
+                let promise = Promise.resolve(1);
+                let u = unit(promise);
                 expect(u()).toBe(null);
-                await u;
-                expect(u()).toBe(1);
+                await promise.then(() => {
+                    expect(u()).toBe(1);
+                });
             });
         });
     });
@@ -130,6 +135,77 @@ describe("Detectable Operations", () => {
         });
     });
 
+    describe("how", () => {
+        test("subscribes to yielded units in the order they are received", () => {
+            const u = unit(0);
+            how(function* () {
+                expect(yield u).toBe(1);
+                expect(yield u).toBe(2);
+                expect(yield u).toBe(3);
+            });
+            expect(u()).toBe(0);
+            u(1);
+            u(2);
+            u(3);
+        });
+        test("starts over once the generator is complete", () => {
+            const u = unit(0);
+            let cursor = 0;
+            how(function* () {
+                expect(yield u).toBe(++cursor);
+                expect(yield u).toBe(++cursor);
+                expect(yield u).toBe(++cursor);
+            });
+            expect(u()).toBe(0);
+            u(1);
+            u(2);
+            u(3);
+            u(4);
+            expect(u()).toBe(4);
+            expect(cursor).toBe(4);
+        });
+
+        test("returns an unsubscribe function", () => {
+            expect.assertions(2);
+            let u = unit(0);
+            let unsub = how(function* () {
+                yield u;
+                expect(u()).toBe(1);
+            });
+            expect(unsub).toBeInstanceOf(Function);
+            expect(u()).toBe(0);
+            unsub();
+            u(1);
+        });
+
+        describe("when an operator is yielded", () => {
+            test("unsubscribes to them when it restarts", () => {
+                let yielded = unit(0),
+                    detected = unit(0);
+                let yields = 0;
+                let spy = jest.fn(() => {
+                    detected();
+                });
+                how(function* () {
+                    yields++;
+                    expect(yield yielded).toBe(yields);
+                    yield when(spy);
+                    yield yielded;
+                    yields++;
+                });
+                expect(spy).toBeCalledTimes(0);
+                yielded(1);
+                expect(spy).toBeCalledTimes(1);
+                detected(1);
+                detected(2);
+                expect(spy).toBeCalledTimes(3);
+                yielded(2);
+                expect(spy).toBeCalledTimes(3);
+                detected(3);
+                expect(spy).toBeCalledTimes(3);
+            });
+        });
+    });
     describe("whenever", () => {
         test("like when, but async", async () => {
             // expect.assertions(3);
