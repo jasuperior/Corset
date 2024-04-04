@@ -67,14 +67,15 @@ This guarentees the freshest state of your application. Under the hood, Corset q
 
 Units of time can handle asynchronous values seamlessly. By passing a Promise to the unit function, Corset Time implicitly resolves the Promise and sets the unit's value once resolved.
 
+**Example:**
+
 ```ts
 import { unit } from "@corset/time";
 
 let users = unit<User[]>([]);
 users(fetch("https://api.com/users"));
 console.log(users()); //Outputs: []
-
-console.log(await users); //Outputs: User[]
+users.then(console.log); //Outputs: User[]
 ```
 
 > When using promises in a unit, await keyword is only necessary when using the unit explicitly. Usually, however, the unit will be used in conjuction with [detectable operators](#detectable-operators).
@@ -223,9 +224,7 @@ In the above example, the event simply returns the click event supplied by the d
 
 ## Detectable Operators
 
-
 Corset Time provides a set of detectable operators that allow you to react to changes in units. These operators - `when`, `whenever`, `thus`, and `unless` - offer a flexible and intuitive way to manage dynamic data, enabling you to create applications that are more responsive and efficient.
-
 
 ### `When`: Subscription to Synchronous Changes
 
@@ -249,43 +248,112 @@ when(() => {
 stockPrice(110); // Outputs: "Stock price changed to $110"
 ```
 
-The callback is called immediately upon being defined, and runs synchronously. This, as opposed to the asynchronous behavior that `whenever` is meant to handle. 
+The callback is called immediately upon being defined, and runs synchronously. This, as opposed to the asynchronous behavior that [`how`](#how-subscription-to-sequential-changes) is better equip to handle.
 
 #### Implicitly Handle conditional statements
 
-`when` will progressively subscribe to it's dependents as it detects their existence. This means, units which are retrieved behind an uninitiated case of a condition, will be subscribed to when their respective condition is met. 
+`when` will progressively subscribe to it's dependents as it detects their existence. This means, units which are retrieved behind an uninitiated case of a condition, will be subscribed to when their respective condition is met.
 
 **Example:**
+
 ```typescript
-const user = unit(fetch("/users/1"))
-const username = product(()=> user()?.username);
-const message = user("Hello, ")
+const user = unit(fetch("/users/1"));
+const username = product(() => user()?.username);
+const message = user("Hello, ");
 when(() => {
-    if(user()) {
-        console.log(message() + username())
-    }else {
-        console.log("loading...")
+    if (user()) {
+        console.log(message() + username());
+    } else {
+        console.log("loading...");
     }
-})
+});
 
 //...business logic
 
 user.then(() => {
-    message("Goodbye, ")
-})
+    message("Goodbye, ");
+});
 
 /**
- * Outputs: 
+ * Outputs:
  * "loading..."
  * "Hello, <Username>"
  * "Goodbye, <Username>"
- */ 
+ */
 ```
+
 In the above example, the message is only logged once the user has been loaded and set on the `user` unit. Once the condition has been met, `when` subscribes to the `message` and `username` unit, making it possible to later change `message` and trigger the console log again provided `user` is still defined.
 
-### `Whenever`: Subscription to Asynchronous Changes 
+### `How`: Subscription to Sequential Changes
 
-`whenever` works similarly to 
+The `how` operator utilizes a generator in order to execute as yielded units are triggered.
+
+**Example:**
+
+```typescript
+let count = unit(0);
+how(function* () {
+    yield count; // Output: 1
+    yield count; // Output: 2
+    yield count; // Output: 3
+});
+
+count(1);
+count(2);
+count(3);
+```
+
+In the above example, `how` halts execution until it receives the next value broadcast by the unit. This allows the body to capture the next 3 values output by the unit.
+
+#### Operation loops forever
+
+The body of the generator is called recursively, so once the function has complete, it will automatically restart the method from the start.
+
+```typescript
+let count = unit(0);
+how(function* () {
+    yield count; // Output: 1 , 4
+    yield count; // Output: 2 , 5
+    yield count; // Output: 3
+});
+count(1);
+count(2);
+count(3);
+count(4);
+count(5);
+```
+
+#### Handles other operations
+
+When yielding another operation, `how` subscribes to the operation once its yielded, and unsubscribes from any yielded operations once the body has returned.
+
+```typescript
+let toggle = unit(false);
+let count = unit(0);
+
+how(function* () {
+    yield toggle;
+    yield when(() => {
+        console.log(`Count: ${count()}`);
+        /**
+         * `Count: 0`
+         * `Count: 1`
+         * `Count: 2`
+         * `Count: 4`
+         */
+    });
+    yield toggle;
+});
+toggle(true);
+count(1);
+count(2);
+toggle(false);
+count(3);
+count(4);
+toggle(true);
+```
+
+In the example above, we create a method that toggles the detection of changes to a `count` unit. The `when` operation, which logs the count, is yielded after the `toggle` unit is set to `true`. This starts the `when` operation's subscription. When the `toggle` unit is set to `false`, the `how` function's body completes execution, causing it to unsubscribe from the when operation. This effectively toggles the detection of changes to the `count` unit.
 
 ---
 

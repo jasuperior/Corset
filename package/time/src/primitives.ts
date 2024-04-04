@@ -464,8 +464,3 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
     }, new Set());
     return accessor;
 };
-
-let u = unit(Promise.resolve(1));
-u.then(() => {
-    console.log("hello", u());
-});

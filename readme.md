@@ -91,4 +91,4 @@ Corset is seperated into 3 individual sub modules that represent the mode of sta
 
 -   [@corset/space](./package/space/readme.md): scope, closures, stacks, queues, and persistence. Contains all primitives of space.
 -   [@corset/time](./package/time/readme.md): signals, effects, channels, and promises. Contains all the primitives which deal in values over time.
--   [@corset/matter](./package/space/readme.md): collections, records, memos and structured data. Contains primitives for dealing with groups of related data.
+-   [@corset/matter](./package/matter/readme.md): collections, records, memos and structured data. Contains primitives for dealing with groups of related data.
