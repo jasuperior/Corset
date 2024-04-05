@@ -8,30 +8,30 @@ export class Channel<T = any> implements Detectable<T> {
     #current: T = null as T;
     readonly listeners = new Set<Detectable.Listener<T>>();
     #pendingListeners = new Set<Detectable.Listener<T>>();
-
     #closed = false;
     #running = false;
+
     constructor(
         public eq: Detectable.Equality<T> = (next: T, prev: T) =>
             next !== undefined && next !== prev
     ) {}
-    get length() {
+    get length(): number {
         return this.#queue.length;
     }
-    get size() {
+    get size(): number {
         return this.listeners.size;
     }
-    get isPending() {
+    get isPending(): boolean {
         return this.#queue.length > 0 || !!this.#pending;
     }
-    get now() {
+    get now(): T {
         //untracked value change
         return this.#current;
     }
     set now(value: T) {
         this.#current = value;
     }
-    subscribe = (listener: Detectable.Listener<T>) => {
+    subscribe = (listener: Detectable.Listener<T>): Detectable.Unsubscriber => {
         let listeners = this.#running ? this.#pendingListeners : this.listeners;
         listeners.add(listener);
         this.now;
@@ -39,10 +39,10 @@ export class Channel<T = any> implements Detectable<T> {
             this.listeners.delete(listener);
         };
     };
-    unsubscribe = (listener: Detectable.Listener<T>) => {
+    unsubscribe = (listener: Detectable.Listener<T>): void => {
         this.listeners.delete(listener);
     };
-    publish = (value: T | Promise<T>) => {
+    publish = (value: T | Promise<T>): void => {
         if (!this.#closed) {
             if (this.isPending) {
                 this.#queue.append(value);
@@ -53,20 +53,10 @@ export class Channel<T = any> implements Detectable<T> {
         }
     };
 
-    throw = (error: Error) => {
+    throw = (error: Error): void => {
         this.publish(Promise.reject(error));
-    }
-    then = <U>(listener: Detectable.Transformation<T, U>) => {
-        // let signal = new Signal<U>();
-        // let promise = new Promise<U>((res, rej) => {
-        //     let schedule = ((value: T) => {
-        //         console.log("scheduled", value);
-        //         res(listener(value));
-        //         this.unsubscribe(schedule);
-        //     }) as Detectable.Listener<T>;
-        //     this.subscribe(schedule);
-        // });
-        // return promise;
+    };
+    then = <U>(listener: Detectable.Transformation<T, U>): this => {
         let schedule = ((value: T) => {
             listener(value);
             this.unsubscribe(schedule);
@@ -74,11 +64,11 @@ export class Channel<T = any> implements Detectable<T> {
         this.subscribe(schedule);
         return this;
     };
-    catch = (listener: Detectable.Listener<Error>) => {
+    catch = (listener: Detectable.Listener<Error>): this => {
         // this.
         throw new Error("Method not implemented.");
     };
-    #trigger = () => {
+    #trigger = (): void => {
         this.#running = true;
         if (this.#queue.length) {
             let value = this.#queue.unprepend();
@@ -113,14 +103,14 @@ export class Channel<T = any> implements Detectable<T> {
             this.#pendingListeners.clear();
         }
     };
-    #triggerPromise = (value: Promise<T>) => {
+    #triggerPromise = (value: Promise<T>): void => {
         this.#pending = value.then((resolvedValue) => {
             this.#queue.prepend(resolvedValue);
             this.#pending = undefined;
             this.#trigger();
         }) as Promise<void>;
     };
-    close = () => {
+    close = (): void => {
         this.#closed = true;
     };
 

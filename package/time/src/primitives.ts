@@ -11,6 +11,8 @@ import {
     get,
     set,
     define,
+    Walkable,
+    Scope,
 } from "@corset/space";
 import { Channel } from "./channel";
 import { Detectable } from "./time.types";
@@ -55,9 +57,9 @@ let depth = 0;
  *
  * @private
  */
-let untrack = (cb: Function) => {
+let untrack = <T extends Scope>(cb: T): T => {
     let c = false;
-    let p = place((...args: any[]) => {
+    let p = place((...args: Parameters<T>) => {
         define(Identity, p);
         set(Untrack, c);
         //if batched
@@ -77,7 +79,7 @@ let untrack = (cb: Function) => {
             }
         }
     });
-    return p;
+    return p as T;
 };
 /**
  * Creates an accessor with certain properties.
@@ -90,7 +92,7 @@ let untrack = (cb: Function) => {
 export const createUnitAccessor = <T>(
     accessor: Function,
     inheritence: Set<any>
-) => {
+): Detectable.Unit<T> => {
     Object.defineProperty(accessor, Symbol.hasInstance, {
         value: (instance: any) => {
             // console.log(instance())
@@ -115,7 +117,7 @@ export const createUnitAccessor = <T>(
  * @param cb - The callback function to be executed when the condition is met.
  * @returns An unsubscribe function.
  */
-export const when = (cb: Detectable.Listener<any>) =>
+export const when = (cb: Detectable.Listener<any>): Detectable.Unsubscriber =>
     //@ts-expect-error
     space<() => void>(() => {
         if (get<number>(Untrack, 2)) {
@@ -172,7 +174,9 @@ Object.defineProperty(when, Symbol.hasInstance, {
  * @link {when}
  * @deprecated: This doesnt offer much use that `how` can't already accomplish.
  */
-export const whenever = async (cb: Detectable.Listener<Promise<any>>) =>
+export const whenever = async (
+    cb: Detectable.Listener<Promise<any>>
+): Promise<Detectable.Unsubscriber> =>
     //@ts-expect-error
     space<() => void>(async () => {
         //TODO: generalize this since its literally the same as when but async
@@ -215,7 +219,7 @@ export const whenever = async (cb: Detectable.Listener<Promise<any>>) =>
 const doIteration = (
     value: Detectable.Unit<any> | Detectable.Unsubscriber,
     iterate: Function
-) => {
+): any => {
     return Detectable.isUnit(value)
         ? value.then(iterate as Detectable.Transformation<any, any>)
         : iterate();
@@ -230,7 +234,7 @@ const doIteration = (
  *
  * @link {when}
  */
-export const how = (cb: Detectable.Process) => {
+export const how = (cb: Detectable.Process): Detectable.Unsubscriber => {
     let p = place(cb),
         gen = p(),
         result = gen.next();
@@ -268,7 +272,7 @@ export const how = (cb: Detectable.Process) => {
  * Each collected listener is then executed in batch.
  * @param cb - The callback function to be executed.
  */
-export const thus = (cb: Detectable.Listener<any>) =>
+export const thus = (cb: Detectable.Listener<any>): void =>
     space(() => {
         set(isBatched, new Set());
         cb();
@@ -284,6 +288,7 @@ export const thus = (cb: Detectable.Listener<any>) =>
  * @param cb - The callback function to be executed if a signal is caught.
  *
  * @experimental
+ * @deprecated: This is a bad idea. We should be able to catch signals in a more general way.
  */
 export const unless = (cb: Detectable.Listener<any>) => {
     if (recall(isDetecting)) {
@@ -303,7 +308,10 @@ export const unless = (cb: Detectable.Listener<any>) => {
  * @param value - The initial value of the unit.
  * @returns The accessor function, which can be used to get or set the value of the unit.
  */
-export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
+export const unit = <T>(
+    value?: T,
+    eq?: Detectable.Equality<T>
+): Detectable.Unit<T> =>
     space<Detectable.Unit<T>>(() => {
         let channel = new Channel(eq); //add a tag instance to the channels to track inheritenc
         let inheritence: Set<Detectable.Unit<any>> = new Set();
@@ -357,7 +365,7 @@ Object.defineProperty(unit, Symbol.hasInstance, {
 export const product = <T, U = T>(
     dx: Detectable.Derivation<T, U>,
     tx?: Detectable.Transformation<U, T>
-) =>
+): Detectable.Unit<U> =>
     space(() => {
         let u = unit<U>();
         let inheritence: Set<Detectable.Unit<any>> = new Set();
@@ -411,7 +419,7 @@ Object.defineProperty(product, Symbol.hasInstance, {
  *
  * @deprecated We added promise interface to channels. Signals may not be needed.
  */
-export const moment = <T>(value?: T) => {
+export const moment = <T>(value?: T): Detectable.Unit<T> => {
     let signal = new Signal<T>(value);
 
     let accessor = createUnitAccessor((newValue?: T | Error) => {
@@ -433,7 +441,7 @@ export const moment = <T>(value?: T) => {
     Object.defineProperty(accessor, "catch", {
         value: signal.catch.bind(signal),
     });
-    return accessor;
+    return accessor as Detectable.Unit<T>;
 };
 /**
  * Creates an event, which is a unit that triggers a change only when it is called.
@@ -442,7 +450,9 @@ export const moment = <T>(value?: T) => {
  *
  * @link {unit}
  */
-export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
+export const event = <T, U = T>(
+    tx: Detectable.Transformation<T, U>
+): Detectable.Unit<U> => {
     let u = unit<U>();
     let t = unit<T>();
     let initialized = unit(false);
@@ -453,7 +463,7 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
             u(tx(value));
         }
     });
-    let accessor = createUnitAccessor((newValue?: T) => {
+    let accessor = createUnitAccessor<U>((newValue?: T) => {
         if (newValue !== undefined) {
             t(newValue);
             if (!initialized()) {
@@ -464,5 +474,5 @@ export const event = <T, U = T>(tx: Detectable.Transformation<T, U>) => {
             return u();
         }
     }, new Set());
-    return accessor;
+    return accessor as Detectable.Unit<U>;
 };

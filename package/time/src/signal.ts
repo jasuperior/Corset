@@ -36,13 +36,13 @@ export class Signal<T = any> extends Promise<T> {
     /**
      * Returns whether the `Signal` is pending.
      */
-    get pending() {
+    get pending(): boolean {
         return this.#pending;
     }
-    get value() {
+    get value(): T | undefined {
         return this.#value;
     }
-    get error() {
+    get error(): any {
         return this.#error?.message;
     }
     then<TResult1 = T, TResult2 = never>(
