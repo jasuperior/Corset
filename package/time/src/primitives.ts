@@ -287,7 +287,7 @@ export const thus = (cb: Detectable.Listener<any>) =>
  */
 export const unless = (cb: Detectable.Listener<any>) => {
     if (recall(isDetecting)) {
-        let channels = now<Set<Channel | Signal>>();
+        let channels = now<Set<Channel | Signal>>()!;
         for (let channel of channels) {
             if (channel instanceof Signal) {
                 channel.catch(cb);
@@ -314,11 +314,11 @@ export const unit = <T>(value?: T, eq?: Detectable.Equality<T>) =>
             if (newValue !== undefined) {
                 channel.publish(newValue);
             } else if (recall(isDetecting)) {
-                let producers = now<Set<Channel>>();
+                let producers = now<Set<Channel>>()!;
                 producers.add(channel);
                 if (get(isSetting, 2)) {
                     //!NOTE: EXPERIMENTAL!!!
-                    let deps = now<Set<Detectable.Unit<any>>>();
+                    let deps = now<Set<Detectable.Unit<any>>>()!;
                     deps.add(accessor);
                 }
             } else {
@@ -422,7 +422,7 @@ export const moment = <T>(value?: T) => {
             }
             signal.next(newValue);
         } else if (recall(isDetecting)) {
-            let producers = now<Set<Channel | Signal>>();
+            let producers = now<Set<Channel | Signal>>()!;
             producers.add(signal);
         }
         return signal.value || signal.error;

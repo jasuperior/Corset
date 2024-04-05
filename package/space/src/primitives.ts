@@ -145,6 +145,7 @@ export const bottom = <T>(move?: boolean): T | undefined => {
  *    let node = now(); // Outputs: 3
  *  });
  * });
+ * ```
  */
 export const now = <T>(): T | undefined => {
     let { value: local } = locale.now!;

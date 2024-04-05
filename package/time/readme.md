@@ -4,9 +4,7 @@
 
 ## Mastering Time in your Application
 
-Corset Time is a powerful library designed to revolutionize the way you handle dynamic values over time in your applications. With Corset Time, you can harness the power of reactive programming to create applications that are more responsive, efficient, and intuitive.
-
-Corset Time is built on the concept of 'units of time' - observable values that can be accessed and modified over time, whilst being detected by encapsulating effects.
+Corset Time is a library that provides a set of reactive primitives and operators for tracking state over time. It utilizes familiar patterns combined with fresh new operations, that make working with reactive data simple and easy to manage. 
 
 ## Key Features
 
@@ -30,9 +28,9 @@ npm install @corset/time
 yarn add @corset/time
 ```
 
-### Harness the Power of Time
+## Core Concepts
 
-Corset Time introduces the concept of units of time, derived units, signals, and events, offering unparalleled flexibility in handling dynamic data. Let's explore some of the key features:
+Corset 
 
 ## Detectable Units
 
