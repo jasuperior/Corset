@@ -14,8 +14,21 @@ const world: Walkable.World = new Fiber<Walkable.Plain>([common.world]);
 
 /**
  * Returns the head value of the current scope.
+ * The head is the first value in the parent most scope.
  * @param getNode - If true, returns the node instead of the value.
  * @returns The head value or node.
+ *
+ * ```ts
+ * space(() => {
+ *  push(1);
+ *  space(() => {
+ *    push(2);
+ *    let node = head(); // Outputs: 1
+ *  });
+ *  push(3);
+ *  let node = head(); // Outputs: 1
+ * })
+ * ```
  */
 export const head = <T, U extends boolean = false>(
     getNode: U = false as U
@@ -26,8 +39,20 @@ export const head = <T, U extends boolean = false>(
 
 /**
  * Returns the tail value of the current scope.
+ * The tail is the last value in the parent most scope.
  * @param getNode - If true, returns the node instead of the value.
  * @returns The tail value or node.
+ * ```ts
+ * space(() => {
+ *  push(1);
+ *  space(() => {
+ *    push(2);
+ *    let node = tail(); // Outputs: 1
+ *  });
+ *  push(3);
+ *  let node = tail(); // Outputs: 3
+ * })
+ * ```
  */
 export const tail = <T>(getNode?: boolean): T | undefined => {
     let { tail } = scope.now!;
@@ -37,6 +62,24 @@ export const tail = <T>(getNode?: boolean): T | undefined => {
 /**
  * Returns the current value of the current scope.
  * @returns The current value.
+ *
+ * ```ts
+ * space(() => {
+ *   push(1);
+ *   push(2);
+ *   let node = here(); // Outputs: 2
+ * });
+ * ```
+ * ```ts
+ * space(() => {
+ *   push(1);
+ *   push(2);
+ *   space(()=>{
+ *      push(3);
+ *      let node = here(); // Outputs: 2
+ *   })
+ * });
+ * ```
  */
 export const here = <T>(): T | undefined => {
     let { now } = scope.now!;
@@ -47,6 +90,18 @@ export const here = <T>(): T | undefined => {
  * Returns the top value of the local scope. (top is the head of the local scope)
  * @param move - If true, moves the pointer to the top.
  * @returns The top value.
+ *
+ * ```ts
+ * space(() => {
+ *  push(1);
+ *  space(() => {
+ *    push(2);
+ *    let node = top(); // Outputs: 2
+ *  });
+ *  push(3);
+ *  let node = top(); // Outputs: 1
+ * })
+ * ```
  */
 export const top = <T>(move?: boolean): T | undefined => {
     let { value: local } = locale.now!;
@@ -58,22 +113,46 @@ export const top = <T>(move?: boolean): T | undefined => {
  * Returns the bottom value of the local scope. (bottom is the tail of the local scope)
  * @param move - If true, moves the pointer to the bottom.
  * @returns The bottom value.
+ *
+ * ```ts
+ * space(() => {
+ *  push(1);
+ *  space(() => {
+ *    push(2);
+ *    let node = bottom(); // Outputs: 2
+ *  });
+ *  push(3);
+ *  let node = bottom(); // Outputs: 3
+ * })
+ * ```
  */
 export const bottom = <T>(move?: boolean): T | undefined => {
     let { value: local } = locale.now!;
     if (move) local.point(local.tail);
     return local.tail?.value as T;
 };
+
 /**
  * Returns the current value of the local scope.
  * @returns The current value.
+ * ```ts
+ * space(() => {
+ *  push(1);
+ *  push(2);
+ *  let node = now(); // Outputs: 2
+ *  space(()=>{
+ *    push(3);
+ *    let node = now(); // Outputs: 3
+ *  });
+ * });
  */
 export const now = <T>(): T | undefined => {
     let { value: local } = locale.now!;
     return local.now?.value as T;
 };
+
 /**
- * Returns the next value of the local scope.
+ * Returns the next value of the local scope. (only useful when used with a `place`)
  * @param move - If true, moves the pointer to the next value.
  * @returns The next value.
  */
