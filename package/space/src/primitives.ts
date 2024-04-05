@@ -2,11 +2,13 @@ import { Deposit } from "./deposit";
 import { Fiber } from "./fiber";
 import { Scope, Walkable } from "./space.types";
 
-const common = {
+const common: { globe: Fiber; world: Walkable.Plain } = {
     globe: new Fiber(),
     world: new Map() as Walkable.Plain,
 };
-const scope = new Deposit<Walkable.Space>(common.globe); //holds the scope of the highest function call
+const scope: Deposit<Walkable.Space> = new Deposit<Walkable.Space>(
+    common.globe
+); //holds the scope of the highest function call
 const locale: Walkable.Globe = new Fiber<Walkable.Space>([common.globe]);
 const world: Walkable.World = new Fiber<Walkable.Plain>([common.world]);
 
@@ -15,43 +17,49 @@ const world: Walkable.World = new Fiber<Walkable.Plain>([common.world]);
  * @param getNode - If true, returns the node instead of the value.
  * @returns The head value or node.
  */
-export const head = <T, U extends boolean = false>(getNode: U = false as U) => {
+export const head = <T, U extends boolean = false>(
+    getNode: U = false as U
+): T | undefined => {
     let { head } = scope.now!;
     return head?.value as T;
 };
+
 /**
  * Returns the tail value of the current scope.
  * @param getNode - If true, returns the node instead of the value.
  * @returns The tail value or node.
  */
-export const tail = <T>(getNode?: boolean) => {
+export const tail = <T>(getNode?: boolean): T | undefined => {
     let { tail } = scope.now!;
     return tail?.value as T;
 };
+
 /**
  * Returns the current value of the current scope.
  * @returns The current value.
  */
-export const here = <T>() => {
+export const here = <T>(): T | undefined => {
     let { now } = scope.now!;
     return now?.value as T;
 };
+
 /**
  * Returns the top value of the local scope. (top is the head of the local scope)
  * @param move - If true, moves the pointer to the top.
  * @returns The top value.
  */
-export const top = <T>(move?: boolean) => {
+export const top = <T>(move?: boolean): T | undefined => {
     let { value: local } = locale.now!;
     if (move) local.point(local.head);
     return local.head?.value as T;
 };
+
 /**
  * Returns the bottom value of the local scope. (bottom is the tail of the local scope)
  * @param move - If true, moves the pointer to the bottom.
  * @returns The bottom value.
  */
-export const bottom = <T>(move?: boolean) => {
+export const bottom = <T>(move?: boolean): T | undefined => {
     let { value: local } = locale.now!;
     if (move) local.point(local.tail);
     return local.tail?.value as T;
@@ -60,7 +68,7 @@ export const bottom = <T>(move?: boolean) => {
  * Returns the current value of the local scope.
  * @returns The current value.
  */
-export const now = <T>() => {
+export const now = <T>(): T | undefined => {
     let { value: local } = locale.now!;
     return local.now?.value as T;
 };
@@ -69,24 +77,24 @@ export const now = <T>() => {
  * @param move - If true, moves the pointer to the next value.
  * @returns The next value.
  */
-export const next = <T>(move?: boolean) => {
+export const next = <T>(move?: boolean): Walkable.Step<T> => {
     let { value: local } = locale.now!;
-    return move ? local.next() : (local.now?.next?.value as T);
+    return move ? local.next() : local.now?.next?.value;
 };
 /**
  * Returns the previous value of the local scope.
  * @param move - If true, moves the pointer to the previous value.
  * @returns The previous value.
  */
-export const prev = <T>(move?: boolean) => {
+export const prev = <T>(move?: boolean): Walkable.Step<T> => {
     let { value: local } = locale.now!;
-    return move ? local.prev() : (local.now?.prev?.value as T);
+    return move ? local.prev() : local.now?.prev?.value;
 };
 /**
  * Sets the value as the next value in the local scope.
  * @param value - The value to set.
  */
-export const to = <T>(value: T) => {
+export const to = <T>(value: T): T => {
     let { value: local } = locale.now!;
     local.postfix(local.now, value);
     return value;
@@ -95,7 +103,7 @@ export const to = <T>(value: T) => {
  * Sets the value as the previous value in the local scope.
  * @param value - The value to set.
  */
-export const from = <T>(value: T) => {
+export const from = <T>(value: T): T => {
     let { value: local } = locale.now!;
     local.prefix(local.now, value);
     return value;
@@ -106,7 +114,7 @@ export const from = <T>(value: T) => {
  * @param value - The value to set.
  * @returns The value of the current node.
  */
-export const prepend = <T>(value: T) => {
+export const prepend = <T>(value: T): T => {
     return goto(top), from(value);
 };
 /**
@@ -114,25 +122,25 @@ export const prepend = <T>(value: T) => {
  * @param value - The value to set.
  * @returns The value of the current node.
  */
-export const append = <T>(value: T) => {
+export const append = <T>(value: T): T => {
     return goto(bottom), to(value);
 };
 /**
  * Moves the pointer to the location of a pointer
  * @returns The value of the top node.
  */
-export const goto = <T>(point: typeof top) => {
+export const goto = <T>(point: typeof top): T | undefined => {
     return point<T>(true);
 };
 /**
  * saves the current state of the scope into the common world. can be accessed by all functions within the common scope.
  * @param label - The label for the snapshot.
  */
-export const expose = <T>(label: any) => {
+export const expose = <T>(label: any): T => {
     let { value: local } = locale.now!;
     let now = mark<T>(label);
     common.world.set(label, Fiber.from(local.now, local.head, local.tail));
-    return now;
+    return now as T;
 };
 /**
  * saves the current state of the scope to the local world. can only be accessed by functions within the local scope.

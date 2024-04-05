@@ -52,6 +52,8 @@ let depth = 0;
  * Otherwise, tries to execute the callback and sets the untrack value based on the result.
  * If an error occurs during execution and we are currently detecting, it does something with the channels.
  * @param cb - The callback function to untrack.
+ *
+ * @private
  */
 let untrack = (cb: Function) => {
     let c = false;
@@ -82,6 +84,8 @@ let untrack = (cb: Function) => {
  * @param accessor - The function to be used as the accessor.
  * @param inheritence - The set of instances that the accessor should consider as its own.
  * @returns The accessor function, with additional properties.
+ *
+ * @private
  */
 export const createUnitAccessor = <T>(
     accessor: Function,
@@ -106,9 +110,7 @@ export const createUnitAccessor = <T>(
 };
 /**
  * Executes a callback when a certain condition is met.
- * The callback is untracked, meaning it will not be executed if it is batched.
- * The function also manages subscriptions to channels, subscribing the callback to each channel in the producers set.
- * If a channel is pending, the callback is added as a listener to the channel.
+ * The function also manages subscriptions to channels, subscribing the callback to each unit in the producers set.
  * The function returns an unsubscribe function that unsubscribes the callback from all channels in the producers set and clears the set.
  * @param cb - The callback function to be executed when the condition is met.
  * @returns An unsubscribe function.

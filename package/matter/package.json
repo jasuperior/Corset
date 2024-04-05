@@ -12,8 +12,8 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@corset/space": "~0.0.6",
-        "@corset/time": "~0.0.6",
+        "@corset/space": "*",
+        "@corset/time": "*",
         "htm": "^3.1.1"
     }
 }

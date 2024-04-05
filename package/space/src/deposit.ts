@@ -20,13 +20,13 @@ export class Deposit<T, N extends number = 1> implements Storable<T, N> {
         this.bank.append(value);
         this.#age = this.bank.length;
     }
-    get now() {
+    get now(): T {
         return this.#now || this.bank.now?.value!;
     }
-    get age() {
+    get age(): number {
         return this.bank.length - this.#age;
     }
-    get life() {
+    get life(): N {
         return this.#life;
     }
     lock(value: T): T | number {
@@ -52,7 +52,7 @@ export class Deposit<T, N extends number = 1> implements Storable<T, N> {
         }
         return this.now;
     }
-    borrow(value: T, age: number = 0) {
+    borrow(value: T, age: number = 0): T {
         this.#now = value;
         return this.now;
     }

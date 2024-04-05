@@ -1,0 +1,5 @@
+{
+    "name": "@corset/time",
+    "version": "0.0.6",
+    "exports": "src/index.ts"
+}

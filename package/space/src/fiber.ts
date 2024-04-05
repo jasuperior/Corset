@@ -17,7 +17,7 @@ export class Knot<T> implements Walkable<T> {
      * @param value - The new value for the copied step.
      * @returns A new step with the new value and the same next and previous steps as the current step.
      */
-    copy(value: T) {
+    copy(value: T): Knot<T> {
         return new Knot(value, this.next, this.prev);
     }
     /**
@@ -25,7 +25,7 @@ export class Knot<T> implements Walkable<T> {
      * @param value - The step to append.
      * @returns The appended step.
      */
-    append(value: Step<T>) {
+    append(value: Step<T>): Step<T> {
         if (value) {
             this.next = value;
             let { prev } = value;
@@ -42,7 +42,7 @@ export class Knot<T> implements Walkable<T> {
      * @param value - The step to prepend.
      * @returns The prepended step.
      */
-    prepend(value: Step<T>) {
+    prepend(value: Step<T>): Step<T> {
         this.prev = value;
         if (value) {
             let { next } = value;
@@ -76,7 +76,7 @@ export class Fiber<T = any> implements Space<T> {
         }
     }
 
-    append(value: T) {
+    append(value: T): Knot<T> {
         const knot = new Knot(value, null, null);
         this.length++;
         if (this.tail) {
@@ -88,7 +88,7 @@ export class Fiber<T = any> implements Space<T> {
         }
         return (this.now = knot);
     }
-    prepend(value: T) {
+    prepend(value: T): Knot<T> {
         const knot = new Knot(value, this.head);
         this.length++;
         if (this.head) {
@@ -101,7 +101,7 @@ export class Fiber<T = any> implements Space<T> {
         return (this.now = knot);
     }
 
-    unappend() {
+    unappend(): Step<T> {
         if (!this.tail) {
             //NOTE: should i change "now" on null also?
             return null;
@@ -115,9 +115,9 @@ export class Fiber<T = any> implements Space<T> {
             this.head = null;
         }
         this.now = this.tail;
-        return knot;
+        return knot as Knot<T>;
     }
-    unprepend() {
+    unprepend(): Step<T> {
         if (!this.head) {
             return null;
         }
@@ -130,17 +130,17 @@ export class Fiber<T = any> implements Space<T> {
             this.tail = null;
         }
         this.now = this.head;
-        return knot;
+        return knot as Knot<T>;
     }
 
-    after(value: T) {
+    after(value: T): Step<T> {
         return this.postfix(this.now, value);
     }
-    before(value: T) {
+    before(value: T): Step<T> {
         return this.prefix(this.now, value);
     }
 
-    prefix(node: Step<T>, value: T) {
+    prefix(node: Step<T>, value: T): Step<T> {
         if (!node) {
             return this.prepend(value);
         }
@@ -152,7 +152,7 @@ export class Fiber<T = any> implements Space<T> {
         knot.append(node);
         return (this.now = knot);
     }
-    postfix(node: Step<T>, value: T) {
+    postfix(node: Step<T>, value: T): Step<T> {
         if (!node) {
             return this.append(value);
         }
@@ -164,7 +164,7 @@ export class Fiber<T = any> implements Space<T> {
         knot.prepend(node);
         return (this.now = knot);
     }
-    next(value?: T) {
+    next(value?: T): Step<T> {
         // console.log("next", value);
         if (value !== undefined) {
             let next = this.now?.next || null;
@@ -174,17 +174,17 @@ export class Fiber<T = any> implements Space<T> {
         }
         return (this.now = this.now?.next ?? null);
     }
-    prev(value?: T) {
+    prev(value?: T): Step<T> {
         if (value !== undefined) {
             let prev = this.now?.prev || null;
             this.remove(prev);
             this.now = this.prefix(this.now, value);
-            return prev;
+            return prev as Knot<T>;
         }
-        return (this.now = this.now?.prev ?? null);
+        return (this.now = this.now?.prev ?? null) as Knot<T>;
     }
 
-    remove(node: Step<T>) {
+    remove(node: Step<T>): void {
         if (!node) {
             return;
         }
@@ -206,7 +206,7 @@ export class Fiber<T = any> implements Space<T> {
             this.now = node.prev || node.next;
         }
     }
-    swap(node: Walkable.Step<T>) {
+    swap(node: Walkable.Step<T>): Step<T> {
         if (!node) return null;
         if (!this.now) return (this.now = node);
 
@@ -223,7 +223,7 @@ export class Fiber<T = any> implements Space<T> {
 
         return (this.now = node);
     }
-    point(node: Step<T>) {
+    point(node: Step<T>): Step<T> {
         return (this.now = node);
     }
 

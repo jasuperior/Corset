@@ -1,21 +1,38 @@
+![logo](corset-logo.png)
+
 # Corset
 
-Corset is a JavaScript library that simplifies managing shared state and data over time. It provides a set of primitives that make it easy to track dependencies, handle promises, and manage state in your applications.
+Corset is not a lingerie brand, its actually a JS/TS library that simplifies managing shared & reactive data. It provides a set of primitives that make it easy to track dependencies, handle async behavior, and manage state and scope in your applications.
 
 ## Features
 
--   **Fully Automatic Dependency Tracking**: Corset tracks dependencies within any `Unit<T>` of time, even with conditional expressions. This means you can focus on writing your application logic without worrying about managing dependencies.
--   **No Additional Module Dependencies**: Corset is a standalone library that doesn't require any additional modules. This keeps your project lightweight and reduces complexity.
--   **Implicit Provider Effects**: In Corset, effects are implicitly providers to their children. This makes it easier to manage state and data flow in your application.
--   **Coherent Promise Handling**: Corset provides a simple and coherent way to handle promises, reducing the fuss and complexity often associated with promise-based code.
--   **And More**: Corset has many more features that require a deeper dive into the core concepts of the library. Check out the [core concepts guide](#noop) to learn more.
+-   **Automatic Dependency Tracking**: Corset tracks dependencies within any `Unit<T>` of time, even with conditional expressions. This means you can focus on writing your application logic without worrying about managing dependencies.
+-   **Tiny (4kb gzip)**: Corset is a standalone library that doesn't require any additional modules to work. Its also been split into submodules that can independently be installed per individual use case.
+-   **Simple Composable API patterns**: Corset provides a small set of operators and primtives that are infinitely composable, and simple to use and understand. 
+-   **And More**: Corset has many more features that require a deeper dive into the core concepts of the library.
 
 ## Installation
 
 To install Corset, run the following command in your terminal:
 
+**npm:**
+
 ```bash
-npm install @corset/time
+$ npm install @corset/core
+```
+
+**yarn:**
+
+```bash
+$ yarn add @corset/core
+```
+
+**jsr:**
+
+```
+$ npx jsr add @corset/core
+-- or
+$ deno add @corset/core
 ```
 
 ## Usage
@@ -23,7 +40,7 @@ npm install @corset/time
 Here's a simple example that demonstrates how to use Corset:
 
 ```typescript
-import { unit, product, when } from "@corset/time";
+import { unit, product, when } from "@corset/core";
 
 let count = unit(0);
 let start = unit(false);
