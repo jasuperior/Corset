@@ -6,7 +6,9 @@ export class Channel<T = any> implements Detectable<T> {
     #queue: Walkable.Space<Promise<T> | T> = new Fiber();
     #pending?: Promise<void>;
     #current: T = null as T;
-    readonly listeners = new Set<Detectable.Listener<T>>();
+    readonly listeners: Set<Detectable.Listener<T>> = new Set<
+        Detectable.Listener<T>
+    >();
     #pendingListeners = new Set<Detectable.Listener<T>>();
     #closed = false;
     #running = false;

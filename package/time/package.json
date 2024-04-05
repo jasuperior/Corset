@@ -2,16 +2,26 @@
     "name": "@corset/time",
     "version": "0.0.6",
     "author": "Ja",
-    "description": "",
+    "description": "simple reactive primitives with immense flexibility",
     "main": "dist/index.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jasuperior/Corset.git"
+    },
     "scripts": {
         "test": "jest",
         "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json",
         "pub": "npm version patch --force && npm publish"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "keywords": [
+        "signals",
+        "generators",
+        "state management",
+        "atoms",
+        "jotai",
+        "reactive"
+    ],
+    "license": "MIT",
     "dependencies": {
         "@corset/space": "*"
     },
