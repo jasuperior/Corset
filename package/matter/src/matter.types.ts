@@ -5,6 +5,7 @@ export const ORIGINAL = Symbol("original");
 export const CURRENT = Symbol("current");
 export const PATCHES = Symbol("patches");
 
+export const TYPE = Symbol("type");
 export interface Controllable<
     T extends Controllable.Value<any, any>,
     U extends T = any
@@ -40,13 +41,14 @@ export namespace Controllable {
     export type Unit<T extends Value<any, any>> = ((
         mutx?: Mutation<T>
     ) => T) & {
+        [TYPE]: "unit";
         as: <U>(prtx: Projection<T, U>) => Detectable.Unit<U>;
     };
 
     export const isUnit = <T extends Value<any, any>>(
         value: any
     ): value is Unit<T> => {
-        return typeof value === "function" && "as" in value;
+        return typeof value === "function" && value[TYPE] === "unit";
     };
 }
 export type PatchOp = "add" | "remove" | "update" | "done";

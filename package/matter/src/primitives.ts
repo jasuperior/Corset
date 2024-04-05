@@ -1,4 +1,4 @@
-import { Controllable, Patch } from "./matter.types";
+import { Controllable, Patch, TYPE } from "./matter.types";
 import { Actor, Puppet } from "./draft";
 import { Detectable, createUnitAccessor, unit, when } from "@corset/time";
 import { get, place, set } from "@corset/space";
@@ -91,5 +91,7 @@ export const system = <T extends Controllable.Value<any, any>>(value: T) => {
             return project(prtx) as Detectable.Unit<U>;
         }
     ) as Controllable.Unit<T>["as"];
+
+    accessor[TYPE] = "unit";
     return accessor as Controllable.Unit<T>;
 };

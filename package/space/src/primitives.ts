@@ -86,6 +86,9 @@ export const here = <T>(): T | undefined => {
     return now?.value as T;
 };
 
+export const $here = <T>(): Walkable.Step<T> => {
+    return scope.now!.now;
+};
 /**
  * Returns the top value of the local scope. (top is the head of the local scope)
  * @param move - If true, moves the pointer to the top.
@@ -285,6 +288,21 @@ export const set = <T>(label: any, value: T, depth: number = 1) => {
     }
     to(value);
     mark(label);
+};
+
+export const remove = <T>(label: any, depth: number = 1) => {
+    let { value: local } = locale.now!;
+    let plain = world.now;
+    for (let i = 0; i < depth && plain; i++) {
+        let fiber = plain.value.get(label);
+        if (fiber) {
+            local.point(fiber.now);
+            local.remove(fiber.now);
+            plain.value.delete(label);
+            return true;
+        }
+        plain = plain.prev;
+    }
 };
 /**
  * Defines a value as a constant within the current scope.

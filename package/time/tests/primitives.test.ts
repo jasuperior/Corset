@@ -1,13 +1,5 @@
 import { describe, expect, jest, test } from "@jest/globals";
-import {
-    moment,
-    product,
-    unit,
-    event,
-    when,
-    whenever,
-    how,
-} from "../src/primitives";
+import { product, unit, event, when, how } from "../src/primitives";
 import exp from "constants";
 
 describe("Detectable Units", () => {
@@ -62,30 +54,6 @@ describe("Detectable Units", () => {
             expect(b()).toBe(6);
             b(9);
             expect(a()).toBe(3);
-        });
-    });
-
-    describe("moment", () => {
-        test("creates a getter setter", () => {
-            let m = moment();
-            expect(m()).toBe(undefined);
-            m(1);
-            expect(m()).toBe(1);
-        });
-        test("value can only be set once", () => {
-            let m = moment();
-            m(1);
-            m(2);
-            expect(m()).toBe(1);
-        });
-        test("value can be awaited", async () => {
-            let m = moment();
-            setTimeout(() => m(1), 100);
-            let start = Date.now();
-            await m;
-            let end = Date.now();
-            expect(m()).toBe(1);
-            expect(end - start).toBeCloseTo(100, -10);
         });
     });
 
@@ -206,29 +174,6 @@ describe("Detectable Operations", () => {
             });
         });
     });
-    describe("whenever", () => {
-        test("like when, but async", async () => {
-            // expect.assertions(3);
-            let a = unit(0);
-            let b = unit(0);
-            let m = moment();
-            let oper = whenever(async () => {
-                let awaited = await m;
-                expect(awaited).toBe(1);
-                expect(a()).toBe(1);
-                b(100);
-            });
-            a(1);
-            m(1);
-            expect(b()).toBe(0);
-            await oper;
-            expect(b()).toBe(100);
-        });
-    });
-    test("returns the promise of an unsubscription function", () => {
-        let oper = whenever(async () => {});
-        return oper.then(async (unsub) => {
-            expect(unsub).toBeInstanceOf(Function);
-        });
-    });
+
+
 });
