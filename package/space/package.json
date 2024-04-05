@@ -1,15 +1,30 @@
 {
     "name": "@corset/space",
     "version": "0.0.7",
-    "description": "",
+    "author": "Ja",
+    "description": "A library that gives you power over scope and context in complex, stateful applications",
     "main": "dist/index.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jasuperior/Corset.git"
+    },
     "devDependencies": {},
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "rm -rf dist/* && tsc -p tsconfig.pkg.json",
-        "pub": "npm version patch --force && npm publish"
+        "pub": "npm version patch --force && npm publish && jsr publish",
+        "typecheck": "tsc --skipLibCheck --noEmit"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC"
+    "engines": {
+        "node": ">= 16"
+    },
+    "keywords": [
+        "state",
+        "reactive",
+        "context",
+        "scope",
+        "corset",
+        "stack"
+    ],
+    "license": "MIT"
 }
